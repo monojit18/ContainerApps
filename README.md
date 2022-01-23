@@ -1,4 +1,4 @@
-# Get Best of Containers, Spend No Time on K8s
+# Get the Best of Containers, Spend No Time on K8s!
 
 ## Introduction
 
@@ -41,6 +41,8 @@ While managed servies like AKS provides a lot of relief to the Organizations but
   
 
 ## Overview
+
+![azure-container-apps-revisions](./Assets/azure-container-apps-revisions.png)
 
 Azure Container Apps enables users to run containerized applications in a completely Serverless manner providing complete isolation of *Orchestration* and *Infrastructure*. Few Common uses of *Azure Container Apps* include:
 
@@ -240,5 +242,98 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     --name httpcontainerapp --resource-group $resourceGroup
     ```
 
-    
+#### httpcontainerapp-secured
 
+- A Containerized Application which responds to http Post requests
+
+- The app is built with Azure Function for *Http trigger*
+
+- Only returns some pre-formatted response message
+
+- Application runs within a Secured Container App Environment
+
+- Create a **Secured** Environment for the Container App
+
+  ```bash
+  az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
+    --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location \
+    # Subnet for Control Plane Infrastructure
+    --controlplane-subnet-resource-id $controlPlaneSubnetId \
+      # Subnet for Container App(s)
+    --app-subnet-resource-id $appsSubnetId
+    
+  # Both Control plane Subnet and Application Services Subnet should be in same VNET viz. $containerAppVnetName
+  ```
+
+- Create secured Container app injected into the *Virtual Network*
+
+  ```bash
+  az containerapp create --name httpcontainerapp-secured --resource-group $resourceGroup \
+  # Secured Environment for the Container App
+    --image $httpImageName --environment $securedEnvironment \
+    --registry-login-server $registryServer --registry-username $registryUserName \
+    --registry-password $registryPassword \
+    # Ingress: Internal; generates Private FQDN, no access from outside of the Virtual Network
+    --ingress internal --target-port 80 --transport http \
+    --min-replicas 1 --max-replicas 5 \
+    --cpu 0.25 --memory 0.5Gi \
+    --secrets azurewebjobsstorage=$azureWebJobsStorage \
+    --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
+  ```
+
+  - Application would run within a specified Virtual Network
+  - Internal/Private FQDN for the form - *<APP_NAME>.internal.<UNIQUE_IDENTIFIER>.<REGION_NAME>.azurecontainerapps.io*
+  - All Applicationds within the same *Secured Environment* would share same internal/Private IP address
+
+#### httpcontainerapp-mult
+
+- A Containerized Application which responds to http Post requests
+
+- The app is built with Azure Function for *Http trigger*
+
+- Only returns some pre-formatted response message
+
+- Application running within a *Virtual Network*
+
+- External Ingress to accept calls from Outside of the Virtual Network
+
+- Would call **[httpcontainerapp-secured](#httpcontainerapp-secured)** internally - since both exist within the same *Virtual Network*
+
+  ![containerapp-secured-1](./Assets/containerapp-secured-1.png)
+
+  ```bash
+  az containerapp create --name httpcontainerapp-mult --resource-group $resourceGroup \
+    --image $httpImageName --environment $securedEnvironment \
+    --registry-login-server $registryServer --registry-username $registryUserName \
+    --registry-password $registryPassword \
+    --ingress external --target-port 80 --transport http \
+    --min-replicas 1 --max-replicas 5 \
+    --cpu 0.25 --memory 0.5Gi \
+    --secrets azurewebjobsstorage=$azureWebJobsStorage \
+    --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
+  ```
+
+#### blobcontainerapp
+
+![containerapp-blob](./Assets/containerapp-blob.png)
+
+- A Containerized [Application](https://raw.githubusercontent.com/monojit18/ContainerApps/master/Microservices/BlobContainerApp/BlobContainerApp/BlobContainerApp.cs?token=GHSAT0AAAAAABM52P35TSLNLMW3NCVOVZXCYPXAB6A) which responds toBlob events
+
+- The app is built with Azure Function for *Blob trigger*
+
+  ```bash
+  az containerapp create --name blobcontainerapp --resource-group $resourceGroup \
+    --image $blobImageName --environment $basicEnvironment \
+    --registry-login-server $registryServer --registry-username $registryUserName \
+    --registry-password $registryPassword \
+    --min-replicas 1 --max-replicas 10 \
+    --secrets azurewebjobsstorage=$azureWebJobsStorage \
+    --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
+  ```
+
+- Unlike previous apps, *NO* **Ingress** is specoified here; since the application is listening to the Blob events which is an *Outbound* call
+
+  ![containerapp-ingress-disabled](./Assets/containerapp-ingress-disabled.png)
+
+  - No FQDN is generated as Ingress is disabled
+  - No *InBound* call is needed (*or possible*)
