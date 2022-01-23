@@ -174,11 +174,71 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 
 - Creates a simple Container App with *External* Ingress
 
-  ![http-containerapp-overview](./Assets/http-containerapp-overview.png)
-
-  ![containerapp-external-ingress](./Assets/containerapp-external-ingress.png)
+  ![containerapp-simple-1](./Assets/containerapp-simple-1.png)
 
   - Generates a *Public FQDN*
+
+    ![http-containerapp-overview](./Assets/http-containerapp-overview.png)
+
+    - The App can be accessed from anywhere
+    - No sepaarte Load Balancer in dded to maintain; Azure does it automatically
+
   - *--target-port* indicates the Container Port; basically as eposed in Dockerfile and similar to ***containerPort*** in K8s Deployment manifest
+
   - This Deployment also ensures a *minimum of 1 replica* and *maximum of 5 replicas* for this App
+
+  - Azure Comntainer Registry credentials are passed as CLI arguments
+
+    - *--registry-login-server*
+    - *--registry-username*
+    - *--registry-password*
+
   - *CPU* and *Memory* is also specified - similar to resource quota in K8s Deployment manifest
+
+    ![containerapp-external-ingress](./Assets/containerapp-external-ingress.png)
+
+  - Secrets are added as part of the Conntainer App Deployment process
+
+    ![containerapp-secrets](./Assets/containerapp-secrets.png)
+
+- Manage Revisions
+
+  - Get a list of Revisions
+
+    ```bash
+    az containerapp revision list --name httpcontainerapp --resource-group $resourceGroup --query="[].name"
+    ```
+
+  - Deactivate/Activate Revisions
+
+    ![azure-container-apps-lifecycle-deactivate](./Assets/azure-container-apps-lifecycle-deactivate.png)
+
+    ```bash
+    az containerapp revision deactivate --name "<revision_name>" --app httpcontainerapp \
+    --resource-group $resourceGroup
+    
+    az containerapp revision activate --name "<revision_name>" --app httpcontainerapp \
+    --resource-group $resourceGroup
+    ```
+
+- Split Traffic
+
+  ![azure-container-apps-revisions-traffic-split](./Assets/azure-container-apps-revisions-traffic-split.png)
+
+  - Split Traffic between two revisions by 50%
+
+    ```bash
+    az containerapp update --traffic-weight "httpcontainerapp--rv1=50,httpcontainerapp--rv2=50" \
+    --name httpcontainerapp --resource-group $resourceGroup
+    ```
+
+  - Route all Traffic to latest revision
+
+    ```bash
+    # Assuming httpcontainerapp--rv2 as the latest Revision
+    az containerapp update --traffic-weight "httpcontainerapp--rv1=0,httpcontainerapp--rv2=100" \
+    --name httpcontainerapp --resource-group $resourceGroup
+    ```
+
+    
+
