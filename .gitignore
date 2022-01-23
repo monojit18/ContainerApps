@@ -1,0 +1,10 @@
+!.gitignore
+.vscode
+.vs
+Misc
+Setup
+**/bin
+**/obj
+**/local.settings.json
+**/!.dockerignore
+!*.md
