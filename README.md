@@ -832,34 +832,38 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
         
             - Copy the value of the **value** parameter from the json response
 
-          - Make following Http call
+              
 
+          - Make following Http call
+      
             ```bash
             http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
             ```
-        
-          - Post Body
 
+          - Post Body
+        
             ```json
             {
                 "Zip": "testzip-2011.zip"
             }
             ```
-        
-          - Check the response coming back from Logic App as below
 
+            
+
+          - Check the response coming back from Logic App as below
+      
             ```json
-          {
+            {
                 "Zip": "testzip-2011.zip"
             }
             ```
           
             
-        
+
         #### Setup Azure Container App
-
+    
         - Create *Virtual Network* to inject Container Apps
-
+        
           ```bash
           containerAppVnetId=$(az network vnet show -n $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
           
@@ -869,9 +873,9 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
           
           ```
         
+          
         
-        
-      - Create a *Secured Environment* for Azure Container Apps with this *Virtual Network*
+        - Create a *Secured Environment* for Azure Container Apps with this *Virtual Network*
         
           ```bash
           az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
@@ -880,13 +884,13 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
             --app-subnet-resource-id $appsSubnetId
           ```
         
+          
         
+        #### Logic App as Azure Container App
         
-      #### Logic App as Azure Container App
+        - Let us now deploy the logic app container onto Azure as Container App
         
-      - Let us now deploy the logic app container onto Azure as Container App
-        
-      - Push Logic App container image to *Azure Container Registry*
+        - Push Logic App container image to *Azure Container Registry*
         
           ```bash
           # If Container image is already created and tested, use Docker CLI
@@ -898,7 +902,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
           az acr build -t <repo_name>/<image_name>:<tag> -r $acrName .
           ```
           
-      - Create Azure Container App with this image
+        - Create Azure Container App with this image
         
           ```bash
           logicappImageName="$registryServer/logiccontainerapp:v1.0.0"
@@ -913,27 +917,27 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
               --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
           ```
           
-      - Note down the Logic App ingress url
+        - Note down the Logic App ingress url
         
-        ![httplogic-container-overview](./Assets/httplogic-container-overview.png)
+          ![httplogic-container-overview](./Assets/httplogic-container-overview.png)
           
-        ![logic-container-ingress](./Assets/logic-container-ingress.png)
+          ![logic-container-ingress](./Assets/logic-container-ingress.png)
           
-          ![httplogic-container-secrets](./Assets/httplogic-container-secrets.png)
+            ![httplogic-container-secrets](./Assets/httplogic-container-secrets.png)
     
-
     
-
     
-  #### Deploy an Azure Function App as Container App
     
-  This function will be triggerred by a http Post call
     
-  - This is going to invoke Logic App internally
+    #### Deploy an Azure Function App as Container App
     
-  - Return the response back to the caller
+    This function will be triggerred by a http Post call
     
-  - Before we Deploy the function app, let us look at its code
+    - This is going to invoke Logic App internally
+    
+    - Return the response back to the caller
+    
+    - Before we Deploy the function app, let us look at its code
     
     
           
@@ -974,7 +978,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
           }
       }      
     ```
-  - Deploy Azure Function app as Container App
+    - Deploy Azure Function app as Container App
     
     ```bash
      
@@ -990,7 +994,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
         --secrets azurewebjobsstorage=$azureWebJobsStorage,logicappcallbackurl=$logicAppCallbackUrl,logicappposturl=$logicAppPostUrl \
         --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage,LOGICAPP_CALLBACK_URL=secretref:logicappcallbackurl,LOGICAPP_POST_URL=secretref:logicappposturl"
     ```
-    
+
     - This Container App is with Ingress type **Internal** so this would be at exposed publicly      
 
     
@@ -1006,9 +1010,9 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
       ![apim-gateway-2](./Assets/apim-gateway-2.png)
 
     - Define ARM template for APIM Container App
-
+    
     ```json
-  {
+    {
               "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
               "contentVersion": "1.0.0.0",
               "parameters": {
@@ -1091,16 +1095,16 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     
     ```bash
     apimappImageName="mcr.microsoft.com/azure-api-management/gateway:latest"
-  serviceEndpoint="<service_Endpoint>"
+    serviceEndpoint="<service_Endpoint>"
     serviceAuth="<service_Auth>"
     
     az deployment group create -f ./api-deploy.json -g $resourceGroup \
       --parameters serviceEndpoint=$serviceEndpoint serviceAuth=$serviceAuth
     ```
     - Add Container Apps as APIM back end
-    
+
       ![apim-api-main](./Assets/apim-api-1.png)
-    
+
         ![apim-api-main](./Assets/apim-api-2.png)
 
         ![apim-api-main](./Assets/apim-api-3.png)
@@ -1108,15 +1112,15 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
       - The Web Service URL would be the *Internal Ingress* url of the *Http Container App*
 
     
-    - This would call the *Logic Containr App* internaly and retun back teh response
+      - This would call the *Logic Containr App* internaly and retun back teh response
     
-       ![apim-container-app](./Assets/apim-container-app.png)
+         ![apim-container-app](./Assets/apim-container-app.png)
     
-
+    
   
-
+  
   ## References
-
+  
   - [Azure Container Apps](https://docs.microsoft.com/en-us/azure/container-apps/overview)					
   - [Logic App Standard](https://docs.microsoft.com/en-us/azure/logic-apps/single-tenant-overview-compare)
   - Azure APIM [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview)
