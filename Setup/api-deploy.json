@@ -1,0 +1,78 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "containerappName": {
+            "defaultValue": "apimcontainerapp",
+            "type": "String"
+        },
+        "location": {
+            "defaultValue": "eastus",
+            "type": "String"
+        },
+        "environmentName": {
+            "defaultValue": "secure-env",
+            "type": "String"
+        },
+        "serviceEndpoint": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "serviceAuth": {
+            "defaultValue": "",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "apiVersion": "2021-03-01",
+            "type": "Microsoft.Web/containerApps",
+            "name": "[parameters('containerappName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "kubeEnvironmentId": "[resourceId('Microsoft.Web/kubeEnvironments', parameters('environmentName'))]",
+                "configuration": {                  
+                    "ingress": {
+                        "external": true,
+                        "targetPort": 8080,
+                        "allowInsecure": false,
+                        "traffic": [
+                            {
+                                "latestRevision": true,
+                                "weight": 100
+                            }
+                        ]
+                    }
+                },
+                "template": {
+                    // "revisionSuffix": "revapim",
+                    "containers": [
+                        {
+                            "name": "conainerapp-apim-gateway",
+                            "image": "mcr.microsoft.com/azure-api-management/gateway:latest",                            
+                            "env": [
+                                {
+                                    "name": "config.service.endpoint",
+                                    "value": "[parameters('serviceEndpoint')]"
+                                },
+                                {
+                                    "name": "config.service.auth",
+                                    "value": "[parameters('serviceAuth')]"
+                                }
+                            ],
+                            "resources": {
+                                "cpu": 0.5,
+                                "memory": "1Gi"
+                            }
+                        }
+                    ],
+                    "scale": {
+                        "minReplicas": 1,
+                        "maxReplicas": 3
+                    }
+                }
+            }
+        }
+    ]
+}

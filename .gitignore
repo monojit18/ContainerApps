@@ -2,7 +2,7 @@
 .vscode
 .vs
 Misc
-Setup
+!Setup
 **/bin
 **/obj
 **/local.settings.json
