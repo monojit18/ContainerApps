@@ -774,18 +774,22 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 
           - **WEBSITE_SITE_NAME** - this is the name by which entries are created in Storage Account by the Logic App while caching its state
 
+            
+
         - **Build** docker image
-
+    
           ```bash
-        docker build -t <repo_name>/<image_name>:<tag> .
+          docker build -t <repo_name>/<image_name>:<tag> .
           ```
-        
-        - **Create** the Logic App Container
 
+          
+    
+        - **Create** the Logic App Container
+        
           ```bash
         docker run --name logiccontainerapp -e AzureWebJobsStorage=$azureWebJobsStorage -d -p 8080:80 <repo_name>/<image_name>:<tag>
           ```
-        
+
         - Let us now **Run** the logic app locally as a Docker container
 
           - Open the Storage account created earlier
@@ -807,15 +811,15 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
               ![logicapp-host-json](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-host-json.png)
 
               
-
+      
           - Open *POSTMAN* or any Rest client of choice like **curl**
-
+        
             ```bash
             http://localhost:8080/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>
             ```
         
             - This would return the Post callback Url for Http triggered Logic App
-
+        
               ```json
             {
                   "value": "https://localhost:443/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>",
@@ -829,17 +833,17 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
                   }
               }
               ```
-        
+
             - Copy the value of the **value** parameter from the json response
-
-              
-
-          - Make following Http call
       
+              
+        
+          - Make following Http call
+
             ```bash
             http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
             ```
-
+        
           - Post Body
         
             ```json
@@ -847,11 +851,11 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
                 "Zip": "testzip-2011.zip"
             }
             ```
-
-            
-
-          - Check the response coming back from Logic App as below
       
+            
+        
+          - Check the response coming back from Logic App as below
+        
             ```json
             {
                 "Zip": "testzip-2011.zip"
@@ -859,9 +863,9 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
             ```
           
             
-
+        
         #### Setup Azure Container App
-    
+        
         - Create *Virtual Network* to inject Container Apps
         
           ```bash
@@ -876,7 +880,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
           
         
         - Create a *Secured Environment* for Azure Container Apps with this *Virtual Network*
-        
+
           ```bash
           az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
             --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location \
@@ -1006,9 +1010,9 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
         ![apim-gateway-1](./Assets/apim-gateway-1.png)
 
     - Get the *Endpoint Url* and *Auth Token* from the portal
-
+    
       ![apim-gateway-2](./Assets/apim-gateway-2.png)
-
+    
     - Define ARM template for APIM Container App
     
     ```json
