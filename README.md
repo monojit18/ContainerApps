@@ -840,7 +840,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
         
             - Post body
 
-              ```js
+              ```json
             {
                   "Zip": "testzip-2011.zip"
               }
