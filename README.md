@@ -465,6 +465,49 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
   acrUsername=$registryUserName acrPassword=$registryPassword azureWebjobsStorage=$azureWebJobsStorage
   ```
 
+  - Secret values are passed to the Container Apps through *secrets* section in the template
+
+    ```json
+    "secrets": [{
+                  "name": "azurewebjobsstorage",
+                  "value": "[parameters('azureWebjobsStorage')]"
+                },
+                {
+                  "name": "passwordsecret",
+                  "value": "[parameters('acrPassword')]"
+    
+                }]
+    ```
+
+  - Scaling configuration is provided by the *scale* section of the template
+
+    - Refer [Scale Triggers](https://docs.microsoft.com/en-us/azure/container-apps/scale-app) as supported by Container Apps
+    - Scale *type* and *metadata* are similar to what [KEDA Scalers](https://keda.sh/docs/2.5/scalers/) provie us with
+
+    ```json
+    "scale": {
+        "minReplicas": 1,
+        "maxReplicas": 10,
+        "rules": [
+        {
+            "name": "blob-scaling",
+            "custom": {
+            "type": "azure-blob",
+            "metadata": {
+            "blobContainerName": "blobcontainerapp",
+            "blobCount": "3"
+            },
+            "auth": [{
+            "secretRef": "azurewebjobsstorage",
+            "triggerParameter": "connection"
+            }]
+        	}
+        }]
+    }
+    ```
+
+    
+
 - Deploy **[httpcontainerapp](#httpcontainerapp)** using ARM
 
   ```json
@@ -595,6 +638,25 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
       ]
   }
   ```
+
+  - Traffic Splitting is handled by *traffic* section of the template
+
+    ```json
+    "traffic": [
+          {
+            "latestRevision": true,
+            "weight": 100
+          }
+          // {
+          //     "revisionName": "httpcontainerapp--rv1",
+          //     "weight": 90
+          // },
+          // {
+          //     "revisionName": "httpcontainerapp--rv2",
+          //     "weight": 10  
+          // }                            
+    ]
+    ```
 
   
 
