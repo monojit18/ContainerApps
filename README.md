@@ -930,11 +930,11 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 
         - This function will be triggerred by a http Post call
 
-        - This is going to invoke Loigic App internally
+        - This is going to invoke Logic App internally
 
         - Return the response back to the caller
 
-        - Before we Deploy the function ap, let us look at its code
+        - Before we Deploy the function app, let us look at its code
 
           ```c#
           using System;
@@ -988,17 +988,141 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
             --image $httpImageName --environment $securedEnvironment \
             --registry-login-server $registryServer --registry-username $registryUserName \
             --registry-password $registryPassword \
-            --ingress external --target-port 80 --transport http \
+            --ingress internal --target-port 80 --transport http \
             --secrets azurewebjobsstorage=$azureWebJobsStorage,logicappcallbackurl=$logicAppCallbackUrl,logicappposturl=$logicAppPostUrl \
             --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage,LOGICAPP_CALLBACK_URL=secretref:logicappcallbackurl,LOGICAPP_POST_URL=secretref:logicappposturl"
           ```
 
-        - This Container App is with Ingress type **External** so this would be at exposed publicly
+        - This Container App is with Ingress type **Internal** so this would be at exposed publicly
 
           
 
         #### Deploy APIM as Container App
 
-      
+        - Select gateway option in APIM in the Azure Portal
 
-  ### 
+          ![apim-gateway-1](./Assets/apim-gateway-1.png)
+
+          
+
+        - Get the *Endpoint Url* and *Auth Token* from the portal
+
+          ![apim-gateway-2](./Assets/apim-gateway-2.png)
+
+        - Define ARM template for APIM Container App
+
+          ```json
+          {
+              "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+              "contentVersion": "1.0.0.0",
+              "parameters": {
+                  "containerappName": {
+                      "defaultValue": "apimcontainerapp",
+                      "type": "String"
+                  },
+                  "location": {
+                      "defaultValue": "eastus",
+                      "type": "String"
+                  },
+                  "environmentName": {
+                      "defaultValue": "secure-env",
+                      "type": "String"
+                  },
+                  "serviceEndpoint": {
+                      "defaultValue": "",
+                      "type": "String"
+                  },
+                  "serviceAuth": {
+                      "defaultValue": "",
+                      "type": "String"
+                  }
+              },
+              "variables": {},
+              "resources": [
+                  {
+                      "apiVersion": "2021-03-01",
+                      "type": "Microsoft.Web/containerApps",
+                      "name": "[parameters('containerappName')]",
+                      "location": "[parameters('location')]",
+                      "properties": {
+                          "kubeEnvironmentId": "[resourceId('Microsoft.Web/kubeEnvironments', parameters('environmentName'))]",
+                          "configuration": {                  
+                              "ingress": {
+                                  "external": true,
+                                  "targetPort": 8080,
+                                  "allowInsecure": false,
+                                  "traffic": [
+                                      {
+                                          "latestRevision": true,
+                                          "weight": 100
+                                      }
+                                  ]
+                              }
+                          },
+                          "template": {
+                              // "revisionSuffix": "revapim",
+                              "containers": [
+                                  {
+                                      "name": "conainerapp-apim-gateway",
+                                      "image": "mcr.microsoft.com/azure-api-management/gateway:latest",                            
+                                      "env": [
+                                          {
+                                              "name": "config.service.endpoint",
+                                              "value": "[parameters('serviceEndpoint')]"
+                                          },
+                                          {
+                                              "name": "config.service.auth",
+                                              "value": "[parameters('serviceAuth')]"
+                                          }
+                                      ],
+                                      "resources": {
+                                          "cpu": 0.5,
+                                          "memory": "1Gi"
+                                      }
+                                  }
+                              ],
+                              "scale": {
+                                  "minReplicas": 1,
+                                  "maxReplicas": 3
+                              }
+                          }
+                      }
+                  }
+              ]
+          }
+          ```
+
+        - Deploy APIM as Container App
+
+          ```bash
+          apimappImageName="mcr.microsoft.com/azure-api-management/gateway:latest"
+          serviceEndpoint="<service_Endpoint>"
+          serviceAuth="<service_Auth>"
+          
+          az deployment group create -f ./api-deploy.json -g $resourceGroup \
+          --parameters serviceEndpoint=$serviceEndpoint serviceAuth=$serviceAuth
+          ```
+
+        - Add Container Apps as APIM back end
+
+          ![apim-api-main](./Assets/apim-api-main.png)
+
+          ![apim-api-main](./Assets/apim-api-1.png)
+
+          ![apim-api-main](./Assets/apim-api-2.png)
+
+          ![apim-api-main](./Assets/apim-api-3.png)
+
+        - The Web Service URL would be the *Internal Ingress* url of the *Http Container App*
+
+        - This would call the *Logic Containr App* internaly and retun back teh response
+
+          
+
+  ## References
+
+  - [Azure Container Apps](https://docs.microsoft.com/en-us/azure/container-apps/overview)					
+  - [Logic App Standard](https://docs.microsoft.com/en-us/azure/logic-apps/single-tenant-overview-compare)
+  - Azure APIM [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview)
+  - Source Repo	
+
