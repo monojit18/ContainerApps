@@ -811,7 +811,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
           
             - Get the value of the **master** key in the **host.json** file
           
-              ![logicapp-host-json](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-host-json.png)
+              ![logicapp-host-json](./Assets/logicapp-host-json.png)
           
         
           
