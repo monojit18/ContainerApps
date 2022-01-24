@@ -242,6 +242,8 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     --name httpcontainerapp --resource-group $resourceGroup
     ```
 
+    ![containerapp-provisioning](./Assets/containerapp-provisioning.png)
+
 #### httpcontainerapp-secured
 
 - A Containerized Application which responds to http Post requests
