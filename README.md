@@ -337,3 +337,264 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 
   - No FQDN is generated as Ingress is disabled
   - No *InBound* call is needed (*or possible*)
+  - Application responds to the Blob storage events Only
+
+
+
+### Deploy with ARM templates
+
+- Deploy **[blobcontainerapp](#blobcontainerapp)** using ARM
+
+  ```json
+  {
+      "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+          "containerappName": {
+              "defaultValue": "blobcontainerapp",
+              "type": "String"
+          },
+          "location": {
+              "defaultValue": "eastus",
+              "type": "String"
+          },
+          "environmentName": {
+              "defaultValue": "basic-env",
+              "type": "String"
+          },
+          "imageName": {
+              "defaultValue": "",
+              "type": "String"
+          },
+          "acrServer": {
+              "defaultValue": "",
+              "type": "String"
+          },
+          "acrUsername": {
+              "defaultValue": "",
+              "type": "String"
+          },
+          "acrPassword": {
+              "defaultValue": "",
+              "type": "String"
+          },
+          "azureWebjobsStorage": {
+              "defaultValue": "",
+              "type": "String"
+          }
+      },
+      "variables": {
+  
+          "passwordSecretName": "passwordsecret",
+          "storageSecretName": "azurewebjobsstorage"
+  
+      },
+      "resources": [
+          {
+              "apiVersion": "2021-03-01",
+              "type": "Microsoft.Web/containerApps",
+              "name": "[parameters('containerappName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                  "kubeEnvironmentId": "[resourceId('Microsoft.Web/kubeEnvironments', parameters('environmentName'))]",
+                  "configuration": {   
+                      "secrets": [{
+                          "name": "azurewebjobsstorage",
+                          "value": "[parameters('azureWebjobsStorage')]"
+                      },
+                      {
+                          "name": "passwordsecret",
+                          "value": "[parameters('acrPassword')]"
+  
+                      }],
+                      "registries": [{
+                          "server": "[parameters('acrServer')]",
+                          "username": "[parameters('acrUsername')]",
+                          "passwordSecretRef": "[variables('passwordSecretName')]"
+                      }]
+                  },
+                  "template": {                    
+                      "containers": [
+                          {
+                              "name": "blob-container",
+                              "image": "[parameters('imageName')]",                            
+                              "env": [
+                                  {
+                                      "name": "AzureWebJobsStorage",
+                                      "secretRef": "[variables('storageSecretName')]"
+                                  }                                
+                              ],
+                              "resources": {
+                                  "cpu": 0.5,
+                                  "memory": "1Gi"
+                              }
+                          }
+                      ],                    
+                      "scale": {
+                          "minReplicas": 1,
+                          "maxReplicas": 10,
+                          "rules": [
+                          {
+                              "name": "blob-scaling",
+                              "custom": {
+                                  "type": "azure-blob",
+                                  "metadata": {
+                                      "blobContainerName": "blobcontainerapp",
+                                      "blobCount": "3"
+                                  },
+                                  "auth": [{
+                                      "secretRef": "azurewebjobsstorage",
+                                      "triggerParameter": "connection"
+                                  }]
+                              }
+                          }]
+                      }
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+  ```bash
+  blobImageName="$registryServer/blobcontainerapp:v1.0.0"
+  azureWebJobsStorage="<Storage connection string as neded by Azure Function>"
+  
+  az deployment group create -f ./blob-deploy.json -g $resourceGroup \
+  --parameters imageName=$blobImageName acrServer=$registryServer \
+  acrUsername=$registryUserName acrPassword=$registryPassword azureWebjobsStorage=$azureWebJobsStorage
+  ```
+
+- Deploy **[httpcontainerapp](#httpcontainerapp)** using ARM
+
+  ```json
+  {
+      "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+          "containerappName": {
+              "defaultValue": "httpcontainerapp",
+              "type": "String"
+          },
+          "location": {
+              "defaultValue": "eastus",
+              "type": "String"
+          },
+          "environmentName": {
+              "defaultValue": "basic-env",
+              "type": "String"
+          },
+          "imageName": {
+              "defaultValue": "",
+              "type": "String"
+          },
+          "acrServer": {
+              "defaultValue": "",
+              "type": "String"
+          },
+          "acrUsername": {
+              "defaultValue": "",
+              "type": "String"
+          },
+          "acrPassword": {
+              "defaultValue": "",
+              "type": "String"
+          },
+          "azureWebjobsStorage": {
+              "defaultValue": "",
+              "type": "String"
+          },
+          "revisionSuffix": {
+              "defaultValue": "",
+              "type": "String"
+          }
+      },
+       "variables": {
+  
+          "passwordSecretName": "passwordsecret",
+          "storageSecretName": "azurewebjobsstorage"
+  
+      },
+      "resources": [
+          {
+              "apiVersion": "2021-03-01",
+              "type": "Microsoft.Web/containerApps",
+              "name": "[parameters('containerappName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                  "kubeEnvironmentId": "[resourceId('Microsoft.Web/kubeEnvironments', parameters('environmentName'))]",
+                  "configuration": {   
+                      "secrets": [{
+                          "name": "azurewebjobsstorage",
+                          "value": "[parameters('azureWebjobsStorage')]"
+                      },
+                      {
+                          "name": "passwordsecret",
+                          "value": "[parameters('acrPassword')]"
+  
+                      }],
+                      "registries": [{
+                          "server": "[parameters('acrServer')]",
+                          "username": "[parameters('acrUsername')]",
+                          "passwordSecretRef": "[variables('passwordSecretName')]"
+                      }],
+                      "ingress": {
+                          "external": true,
+                          "targetPort": 80,
+                          "allowInsecure": false,
+                          "traffic": [
+                              {
+                                  "latestRevision": true,
+                                  "weight": 100
+                              }
+                              // {
+                              //     "revisionName": "httpcontainerapp--rv1",
+                              //     "weight": 90
+                              // },
+                              // {
+                              //     "revisionName": "httpcontainerapp--rv2",
+                              //     "weight": 10  
+                              // }                            
+                          ]
+                      }
+                  },
+                  "template": {
+                      "revisionSuffix": "[parameters('revisionSuffix')]",
+                      "containers": [
+                          {
+                              "name": "blob-container",
+                              "image": "[parameters('imageName')]",                            
+                              "env": [
+                                  {
+                                      "name": "AzureWebJobsStorage",
+                                      "secretRef": "[variables('storageSecretName')]"
+                                  }                                
+                              ],
+                              "resources": {
+                                  "cpu": 0.5,
+                                  "memory": "1Gi"
+                              }
+                          }
+                      ],                    
+                      "scale": {
+                          "minReplicas": 1,
+                          "maxReplicas": 10,
+                          "rules": [
+                          {
+                              "name": "http-scaling",
+                              "http": {
+                                  "metadata": {
+                                      "concurrentRequests": "100"                                
+                                  }
+                              }
+                          }]
+                      }
+                  }
+              }
+          }
+      ]
+  }
+  ```
+
+  
+
