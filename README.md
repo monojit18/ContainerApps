@@ -9,15 +9,15 @@ Cloud Native application deployment using a K8s based service or tool is now. co
 - Resiliency
 - Reliability
 
-This allows organizations to rollout Stable reelases much faster. But there are downsides of this approach as well:
+This allows organizations to rollout Stable releases much faster. But there are downsides of this approach as well:
 
 - Need to have a deep insights into K8s eco-system
-- Managing the K8s Cluster - its seceurity, performance, upgrades
+- Managing the K8s Cluster - its security, performance, upgrades
 - Additional effort needed for ensuring Application Isolation, Security, Multi-tenancy
 - Solid implementation of Container Insight solutions for continuous monitoring of Pods, Services and Nodes
-- Imperative to have some 3rd party solutions like Service Mesh to have better insights into application flow and integrations for complex systems with large no of granular Microservices 
+- Imperative to have some 3rd party solutions like Service Mesh to have better insights into application flow and integrations for complex systems with large no of granular Microservice
 
-While managed servies like AKS provides a lot of relief to the Organizations but they want to move towards an even more Managed solution that cxan take away the complexities of K8s eco-system and its sub sequnt management. yet they do not want to compromise on most of the K8s benefits.
+While managed services like AKS provides a lot of relief to the Organizations but they want to move towards an even more Managed solution that can take away the complexities of K8s eco-system and its subsequent management; yet they do not want to compromise on most of the K8s benefits.
 
 [Azure Container Apps](https://docs.microsoft.com/en-us/azure/container-apps/overview) is a service aimed at solving this problem and make Microservices deployment easier and quicker!
 
@@ -36,7 +36,7 @@ While managed servies like AKS provides a lot of relief to the Organizations but
 
 - Deep-dive on [AKS](https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes)
 
-- Programmatic aspects viz. integrationm wioth [Dapr](https://dapr.io/) etc.
+- Programmatic aspects viz. integrations with [Dapr](https://dapr.io/) etc.
 
   
 
@@ -49,7 +49,7 @@ Azure Container Apps enables users to run containerized applications in a comple
 - Deploying API endpoints
 - Hosting background processing applications
 - Handling event-driven processing
-- Running microservices
+- Running microservice
 
 Applications built on Azure Container Apps can dynamically scale based on the various triggers as well as [KEDA-supported scaler](https://keda.sh/docs/scalers/)
 
@@ -58,7 +58,7 @@ Features of Azure Container Apps include:
 - Run multiple **Revisions** of containerized applications
 - **Autoscale** apps based on any KEDA-supported scale trigger
 - Enable HTTPS **Ingress** without having to manage other Azure infrastructure like *L7 Load Balancers* 
-- Easily implement **Blue/Green** deploymnent and perform **A/B Testing** by splitting traffic across multiple versions of an application
+- Easily implement **Blue/Green** deployment and perform **A/B Testing** by splitting traffic across multiple versions of an application
 - **Azure CLI** extension or **ARM** templates to automate management of containerized applications
 - Manage Application **Secrets** securely
 - View **Application Logs** using *Azure Log Analytics*.
@@ -84,7 +84,7 @@ registryUserName="<container_registry_username>"
 registryPassword="<container_registry_password>"
 
 # Optional - NOT a requirement for Contyainer Apps but mostly for microservice applications
-storageName="<stoorage_account_name>"
+storageName="<storage_account_name>"
 
 # Optional - Primary for Securing Container Apps
 containerAppVnetName="containerapp-workshop-vnet"
@@ -135,7 +135,7 @@ logWorkspaceId=$(az monitor log-analytics workspace show --query customerId -g $
 logWorkspaceSecret=$(az monitor log-analytics workspace get-shared-keys --query primarySharedKey -g $monitoringResourceGroup -n $logWorkspace -o tsv)
 ```
 
-#### Create Containr App Environment
+#### Create Container App Environment
 
 ```bash
 # Simple environment with no additional security for the underlying sInfrastructure
@@ -183,13 +183,13 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     ![http-containerapp-overview](./Assets/http-containerapp-overview.png)
 
     - The App can be accessed from anywhere
-    - No sepaarte Load Balancer in dded to maintain; Azure does it automatically
+    - No separate Load Balancer in dded to maintain; Azure does it automatically
 
-  - *--target-port* indicates the Container Port; basically as eposed in Dockerfile and similar to ***containerPort*** in K8s Deployment manifest
+  - *--target-port* indicates the Container Port; basically as exposed in Dockerfile and similar to ***containerPort*** in K8s Deployment manifest
 
   - This Deployment also ensures a *minimum of 1 replica* and *maximum of 5 replicas* for this App
 
-  - Azure Comntainer Registry credentials are passed as CLI arguments
+  - Azure Container Registry credentials are passed as CLI arguments
 
     - *--registry-login-server*
     - *--registry-username*
@@ -199,7 +199,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 
     ![containerapp-external-ingress](./Assets/containerapp-external-ingress.png)
 
-  - Secrets are added as part of the Conntainer App Deployment process
+  - Secrets are added as part of the Container App Deployment process
 
     ![containerapp-secrets](./Assets/containerapp-secrets.png)
 
@@ -333,7 +333,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
   ```
 
-- Unlike previous apps, *NO* **Ingress** is specoified here; since the application is listening to the Blob events which is an *Outbound* call
+- Unlike previous apps, *NO* **Ingress** is specified here; since the application is listening to the Blob events which is an *Outbound* call
 
   ![containerapp-ingress-disabled](./Assets/containerapp-ingress-disabled.png)
 
@@ -460,7 +460,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 
   ```bash
   blobImageName="$registryServer/blobcontainerapp:v1.0.0"
-  azureWebJobsStorage="<Storage connection string as neded by Azure Function>"
+  azureWebJobsStorage="<Storage connection string as needed by Azure Function>"
   
   az deployment group create -f ./blob-deploy.json -g $resourceGroup \
   --parameters imageName=$blobImageName acrServer=$registryServer \
@@ -664,15 +664,15 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 
   ## Connecting the Dots...
 
-  - Build a connected Microservices example with *Azure Function*, *Logic App*
+  - Build a connected Microservice example with *Azure Function*, *Logic App*
     - Each Application to be deployed as a Container App to provide an end to end Serverless experience
-    - Complete abstration of *Infrastructure* and *Orchestration* of the underlying resources
+    - Complete abstraction of *Infrastructure* and *Orchestration* of the underlying resources
     - Expose these apps with *Internal Ingress* for blocking public access
     - Inject all apps into a Virtual Network (*Secured Environment*) providing complete isolation
   - Integrate with Azure APIM to provide a *Gateway* to service to the backend Containerized APIs
     - Create an APIM instance on Azure with a [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview)
     - Deploy APIM as a docker container with *Container App* and in the same *Secured Environment* as above
-    - Place all Internal Container Apps (*as deploed above*) as backend for the APIM
+    - Place all Internal Container Apps (*as deployed above*) as backend for the APIM
     - Expose the APIM Container App with *External Ingress* thus making it the only public facing endpoint for the entire system
       - APIM Container App (*Self-hosted Gateway*) would be able to call the internal Container Apps since being part of the same Secured Environment
 
@@ -691,7 +691,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     ##### Pre-Requisites
 
     - Azure Function Core Tools - [v3.x](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=v3%2Cwindows%2Ccsharp%2Cportal%2Cbash)
-      - The abobve link is for macOS; please install the appropriate links in the ssme page for other Operating Systems
+      - The abobve link is for macOS; please install the appropriate links in the same page for other Operating Systems
       - At the time of writing, Core tools 3.x only supports the *Logic App Designer* within Visual Studio Code
       - The current example has been tested with - Function Core Tools version **3.0.3904** on a *Windows box*
     - [Docker Desktop for Windows](https://hub.docker.com/editions/community/docker-ce-desktop-windows)
@@ -710,13 +710,13 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 
     - Choose *Stateful* workflow in the process and name accordingly - viz. *httperesflow*
 
-    - This generateds all necessary files and sub-folders within the current folder
+    - This generates all necessary files and sub-folders within the current folder
 
       - A folder named *httpresflow* is also added which contains the workflow.json file
 
       - This describes the Logic App Actions/triggers
 
-      - This example uses a Http Request/Response type Logic App for simplicity 
+      - This example uses a Http Request/Response type Logic App for simplicity
 
       - The Logic App would accept a Post body as below and would return back the same as response
 
@@ -772,22 +772,20 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
           COPY ./bin/Debug/netcoreapp3.1 /home/site/wwwroot
           ```
 
-          - **WEBSITE_SITE_NAME** - this is the name by which entries are created in Storasge Account by the Logic App while caching its state
-
-            
+          - **WEBSITE_SITE_NAME** - this is the name by which entries are created in Storage Account by the Logic App while caching its state
 
         - **Build** docker image
 
           ```bash
-          docker build -t <repo_name>/<image_name>:<tag> .
+    docker build -t <repo_name>/<image_name>:<tag> .
           ```
-
+        
         - **Create** the Logic App Container
 
           ```bash
-          docker run --name logiccontainerapp -e AzureWebJobsStorage=$azureWebJobsStorage -d -p 8080:80 <repo_name>/<image_name>:<tag>
+    docker run --name logiccontainerapp -e AzureWebJobsStorage=$azureWebJobsStorage -d -p 8080:80 <repo_name>/<image_name>:<tag>
           ```
-
+        
         - Let us now **Run** the logic app locally as a Docker container
 
           - Open the Storage account created earlier
@@ -813,13 +811,13 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
           - Open *POSTMAN* or any Rest client of choice like **curl**
 
             ```bash
-            http://localhost:8080/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>
+      http://localhost:8080/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>
             ```
-
+        
             - This would return the Post callback Url for Http triggered Logic App
 
               ```json
-              {
+        {
                   "value": "https://localhost:443/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>",
                   "method": "POST",
                   "basePath": "https://localhost/api/httpresflow/triggers/manual/invoke",
@@ -831,56 +829,56 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
                   }
               }
               ```
-
+        
             - Copy the value of the **value** parameter from the json response
 
           - Make following Http call
 
             ```bash
-            http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
+      http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
             ```
-
+        
             - Post body
 
               ```js
-              {
+        {
                   "Zip": "testzip-2011.zip"
               }
               ```
-
+        
               
 
           - Check the response coming back from Logic App as below
 
             ```json
-            {
+      {
                 "Zip": "testzip-2011.zip"
             }
             ```
-
+        
         #### Setup Azure Container App
 
         - Create *Virtual Network* to inject Container Apps
 
           ```bash
-          containerAppVnetId=$(az network vnet show -n $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+    containerAppVnetId=$(az network vnet show -n $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
           
           controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
           
           appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
           ```
-
+        
           
 
         - Create a *Secured Environment* for Azure Container Apps with this *Virtual Network*
 
           ```bash
-          az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
+    az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
             --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location \
             --controlplane-subnet-resource-id $controlPlaneSubnetId \
             --app-subnet-resource-id $appsSubnetId
           ```
-
+        
           
 
         #### Logic App as Azure Container App
@@ -890,7 +888,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
         - Push Logic App container image to *Azure Container Registry*
 
           ```bash
-          # If Container image is already created and tested, use Docker CLI
+    # If Container image is already created and tested, use Docker CLI
           docker push <repo_name>/<image_name>:<tag>
           
           OR
@@ -898,11 +896,11 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
           # Use Azure CLI command for ACR to build and push
           az acr build -t <repo_name>/<image_name>:<tag> -r $acrName .
           ```
-
+        
         - Create Azure Container App with this image
 
           ```bash
-          logicappImageName="$registryServer/logiccontainerapp:v1.0.0"
+    logicappImageName="$registryServer/logiccontainerapp:v1.0.0"
           azureWebJobsStorage="<storage_account_connection_string"
           
           az containerapp create --name logicontainerapp --resource-group $resourceGroup \
@@ -913,7 +911,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
             --secrets azurewebjobsstorage=$azureWebJobsStorage \
             --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
           ```
-
+        
         - Note down the Logic App ingress url
 
           ![httplogic-container-overview](./Assets/httplogic-container-overview.png)
@@ -937,7 +935,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
         - Before we Deploy the function app, let us look at its code
 
           ```c#
-          using System;
+    using System;
           using System.IO;
           using System.Net.Http;
           using System.Threading.Tasks;
@@ -974,11 +972,11 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
               }
           }
           ```
-
+        
         - Deploy Azure Function app as Container App
 
           ```bash
-          httpImageName="$registryServer/httplogiccontainerapp:v1.0.5"
+    httpImageName="$registryServer/httplogiccontainerapp:v1.0.5"
           
           logicAppCallbackUrl="https://<logicontainerapp_internal_ingress_url>/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>"
           
@@ -992,7 +990,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
             --secrets azurewebjobsstorage=$azureWebJobsStorage,logicappcallbackurl=$logicAppCallbackUrl,logicappposturl=$logicAppPostUrl \
             --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage,LOGICAPP_CALLBACK_URL=secretref:logicappcallbackurl,LOGICAPP_POST_URL=secretref:logicappposturl"
           ```
-
+        
         - This Container App is with Ingress type **Internal** so this would be at exposed publicly
 
           
@@ -1012,7 +1010,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
         - Define ARM template for APIM Container App
 
           ```json
-          {
+    {
               "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
               "contentVersion": "1.0.0.0",
               "parameters": {
@@ -1091,18 +1089,18 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
               ]
           }
           ```
-
+        
         - Deploy APIM as Container App
 
           ```bash
-          apimappImageName="mcr.microsoft.com/azure-api-management/gateway:latest"
+    apimappImageName="mcr.microsoft.com/azure-api-management/gateway:latest"
           serviceEndpoint="<service_Endpoint>"
           serviceAuth="<service_Auth>"
           
           az deployment group create -f ./api-deploy.json -g $resourceGroup \
           --parameters serviceEndpoint=$serviceEndpoint serviceAuth=$serviceAuth
           ```
-
+        
         - Add Container Apps as APIM back end
 
           ![apim-api-main](./Assets/apim-api-main.png)
@@ -1117,10 +1115,11 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 
         - This would call the *Logic Containr App* internaly and retun back teh response
 
-          
+          ![apim-container-app](./Assets/apim-container-app.png)
 
+  
   ## References
-
+  
   - [Azure Container Apps](https://docs.microsoft.com/en-us/azure/container-apps/overview)					
   - [Logic App Standard](https://docs.microsoft.com/en-us/azure/logic-apps/single-tenant-overview-compare)
   - Azure APIM [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview)
