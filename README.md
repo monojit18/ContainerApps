@@ -658,5 +658,18 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     ]
     ```
 
-  
+  ### Connecting the Dots...
 
+  - Build a connected Microservices example with *Azure Function*, *Logic App*
+    - Each Application to be deployed as a Container App to provide an end to end Serverless experience
+    - Complete abstration of *Infrastructure* and *Orchestration* of the underlying resources
+    - Expose these apps with *Internal Ingress* for blocking public access
+    - Inject all apps into a Virtual Network (*Secured Environment*) providing complete isolation
+  - Integrate with Azure APIM to provide a *Gateway* to service to the backend Containerized APIs
+    - Create an APIM instance on Azure with a [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview)
+    - Deploy APIM as a docker container with *Container App* and in the same *Secured Environment* as above
+    - Place all Internal Container Apps (*as deploed above*) as backend for the APIM
+    - Expose the APIM Container App with *External Ingress* thus making it the only public facing endpoint for the entire system
+      - APIM Container App (*Self-hosted Gateway*) would be able to call the internal Container Apps since being part of the same Secured Environment
+
+  ![apim-container-app](./Assets/apim-container-app.png)
