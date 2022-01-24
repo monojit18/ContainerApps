@@ -658,7 +658,9 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     ]
     ```
 
-  ### Connecting the Dots...
+  
+
+  ## Connecting the Dots...
 
   - Build a connected Microservices example with *Azure Function*, *Logic App*
     - Each Application to be deployed as a Container App to provide an end to end Serverless experience
@@ -673,3 +675,89 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
       - APIM Container App (*Self-hosted Gateway*) would be able to call the internal Container Apps since being part of the same Secured Environment
 
   ![apim-container-app](./Assets/apim-container-app.png)
+
+  
+
+  ### Step-by-Step
+
+  #### Logic App in a Container
+
+  - Let us first Create and Deploy a Logic app as Docker Container
+
+  - Logic App runs an Azure Function locally and hence few tools/extensions need to be installed
+
+    ##### Pre-Requisites
+
+    - Azure Function Core Tools - [v3.x](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=v3%2Cwindows%2Ccsharp%2Cportal%2Cbash)
+      - The abobve link is for macOS; please install the appropriate links in the ssme page for other Operating Systems
+      - At the time of writing, Core tools 3.x only supports the *Logic App Designer* within Visual Studio Code
+      - The current example has been tested with - Function Core Tools version **3.0.3904** on a *Windows box*
+    - [Docker Desktop for Windows](https://hub.docker.com/editions/community/docker-ce-desktop-windows)
+    - A **Storage Account** on Azure - which is needed by any Azure function App
+      - Logic App (*aka Azure Function*) would use this storage to cache its state
+    - VS Code Extension for [Standard Logic App](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurelogicapps#:~:text=Azure%20Logic%20Apps%20for%20Visual,Apps%20directly%20from%20VS%20Code.)
+    - VS Code Extension for [Azure Function](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions) 
+    - VS Code extension for [Docker](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker)
+      - This is Optional but recommended; it makes life easy while dealing with *Dockerfile* and *Docker CLI* commands
+
+  - Create a Local folder to host all files related Logic App - viz. *LogicContainerApp*
+
+  - Open the folder in VS Code
+
+  - Create a *New Logic App Project* in this Folder 
+
+    - Choose *Stateful* workflow in the process and name accordingly - viz. *httperesflow*
+
+    - This generateds all necessary files and sub-folders within the current folder
+
+      - A folder named *httpresflow* is also added which contains the workflow.json file
+      - This describes the Logic App Actions/triggers
+      - This example uses a Http Request/Response type Logic App for simplicity 
+
+      ![logicapp-folder-structure](./Assets/logicapp-folder-structure.png)
+
+      - Right click on the *workflow.json* file and Open the *Logic App Designer* - *this might take few seconds to launch*
+
+      - Add Http Request trigger
+
+        ![logicapp-designer-request](./Assets/logicapp-designer-request.png)
+
+      - Add Http Respoinse Action
+
+        ![logicapp-designer-response](./Assets/logicapp-designer-response.png)
+
+        ![logicapp-designer-httpresflow](./Assets/logicapp-designer-httpresflow.png)
+
+      - Save the Designer changes
+
+      - Right click on the empty area on the workspace folder structure and Open the Context menu
+
+        - Select the menu options that says - *Convert to Nuget-based Logic App project*
+
+          ![logicapp-nuget-menu](./Assets/logicapp-nuget-menu.png)
+
+          - This would generate .NET specific files - along with a *LogicContainerApp.csproj* file
+
+        - Open the **local.settings.json** file
+
+          - Replace the value of AzureWebJobsStorage variable with the value from Storage Account string created for 
+
+        - Add Dockerfile in the workspace
+
+          ```bash
+          FROM mcr.microsoft.com/azure-functions/node:3.0
+          
+          ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
+               AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
+               FUNCTIONS_V2_COMPATIBILITY_MODE=true \     
+               AzureWebJobsStorage='' \
+               AZURE_FUNCTIONS_ENVIRONMENT=Development \
+               WEBSITE_HOSTNAME=localhost \
+               WEBSITE_SITE_NAME=logiccontainerapp
+          
+          COPY ./bin/Debug/netcoreapp3.1 /home/site/wwwroot
+          ```
+
+          - WEBSITE_SITE_NAME is imprtant - this si the name byu which 
+
+  ### 
