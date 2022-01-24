@@ -27,7 +27,7 @@ While managed services like AKS provides a lot of relief to the Organizations bu
   - Benefits
   - Features
   - How to Setup - *Azure CLI* and *ARM*
-  - Connected Examples
+  - [Connected Examples](#Connecting the Dots...)
 
 
 ### What the Document does NOT
@@ -805,17 +805,17 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
               ![logicapp-webjobs-secrets-1](./Assets/logicapp-webjobs-secrets-3.png)
 
           
-            
           
-            
+          
+          
           
             - Get the value of the **master** key in the **host.json** file
           
               ![logicapp-host-json](./Assets/logicapp-host-json.png)
           
-        
           
-
+          
+          
           
         
           - Open *POSTMAN* or any Rest client of choice like **curl**
@@ -954,7 +954,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     - Before we Deploy the function app, let us look at its code
     
     
-          
+    ​      
     ```c#
     using System;
     using System.IO;
