@@ -1161,13 +1161,35 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
       
     
     
-      - This would call the *Logic Containr App* internaly and retun back teh response
+      - This would call the *Logic Containr App* internally and return back the Json response
     
          ![apim-container-app](./Assets/apim-container-app.png)
          
          
     
+    #### Test the flow
     
+    - Grab the FQDN of the APIM Container App from the portal
+    
+      ![apim-container-overview](./Assets/apim-container-overview.png)
+    
+      
+    
+    - The FQDN can be obtained through Azure CLI as well
+    
+      ```bash
+      fqdn=$(az containerapp show -g $resourceGroup -n apimcontainerapp --query="configuration.ingress.fqdn")
+      ```
+    
+    - Make a call to the API URL as below and receive the response back
+    
+      ```bash
+      curl -k -X POST --data '{"zip":"test.zip"}' https://$fqdn/container/api/logicapp/
+      ....
+      
+      {"zip":"test.zip"}
+      ```
+  
   
   
   ## References
