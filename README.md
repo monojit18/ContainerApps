@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Cloud Native application deployment using a K8s based service or tool is now. coomon practice providing -
+Cloud Native application deployment using a K8s based service or tool is now a common practice providing -
 
 - Immense Flexibility
 - Scalability
