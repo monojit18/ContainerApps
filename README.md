@@ -314,6 +314,8 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     --secrets azurewebjobsstorage=$azureWebJobsStorage \
     --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
   ```
+  
+  
 
 #### blobcontainerapp
 
