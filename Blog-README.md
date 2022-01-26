@@ -13,7 +13,7 @@ Features of Azure Container Apps include:
 - **Azure CLI** extension or **ARM** templates to automate management of containerized applications
 - Manage Application **Secrets** securely
 - View **Application Logs** using *Azure Log Analytics*
-- **Manage** multiple Container Apps using [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview) feature of Azure APIM providing rich APIM Policies and Authentication mechainsms to the Container Apps
+- **Manage** multiple Container Apps using [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview) feature of Azure APIM providing rich APIM Policies and Authentication mechanisms to the Container Apps
 
 This article would demonstrate:
 
@@ -28,7 +28,7 @@ This article would demonstrate:
 
 ## How to Setup
 
-#### Set CLI Varibales
+#### Set CLI Variables
 
 ```bash
 tenantId="<tenantId>"
@@ -44,7 +44,7 @@ registryServer="<container_registry_server>"
 registryUserName="<container_registry_username>"
 registryPassword="<container_registry_password>"
 
-# Optional - NOT a requirement for Contyainer Apps but mostly for microservice applications
+# Optional - NOT a requirement for Container Apps but mostly for microservice applications
 storageName="<storage_account_name>"
 
 # Optional - Primary for Securing Container Apps
@@ -151,7 +151,7 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
   ##### Pre-Requisites
 
   - Azure Function Core Tools - [v3.x](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=v3%2Cwindows%2Ccsharp%2Cportal%2Cbash)
-    - The abobve link is for macOS; please install the appropriate links in the same page for other Operating Systems
+    - The above link is for macOS; please install the appropriate links in the same page for other Operating Systems
     - At the time of writing, Core tools 3.x only supports the *Logic App Designer* within Visual Studio Code
     - The current example has been tested with - Function Core Tools version **3.0.3904** on a *Windows box*
   - [Docker Desktop for Windows](https://hub.docker.com/editions/community/docker-ce-desktop-windows)
@@ -197,7 +197,7 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
 
       
 
-    - Add Http Respoinse Action
+    - Add Http Response Action
 
       ![logicapp-designer-response](./Assets/logicapp-designer-response.png)
 
@@ -403,7 +403,7 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
 
 ### Deploy Azure Function as Container App
 
-This function will be triggerred by a http Post call
+This function will be triggered by a http Post call
 
 - This is going to invoke Logic App internally
 
