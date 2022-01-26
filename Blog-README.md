@@ -1,5 +1,7 @@
 # Connected Microservices with Container Apps
 
+![azure-container-apps-environments](./Assets/azure-container-apps-environments.png)
+
 [Azure Container Apps(Preview)](https://docs.microsoft.com/en-us/azure/container-apps/overview) enables users to run containerized applications in a completely Serverless manner providing complete isolation of *Orchestration* and *Infrastructure*. Applications built on Azure Container Apps can dynamically scale based on the various triggers as well as [KEDA-supported scalers](https://keda.sh/docs/scalers/)
 
 Features of Azure Container Apps include:
@@ -184,9 +186,6 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
       }
       ```
 
-      
-
-    ![logicapp-folder-structure](./Assets/logicapp-folder-structure.png)
 
     
 
@@ -201,8 +200,6 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
     - Add Http Respoinse Action
 
       ![logicapp-designer-response](./Assets/logicapp-designer-response.png)
-
-      ![logicapp-designer-httpresflow](./Assets/logicapp-designer-httpresflow.png)
 
       
 
@@ -401,14 +398,6 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
         - Note down the Logic App ingress url
 
           ![httplogic-container-overview](./Assets/httplogic-container-overview.png)
-
-          
-
-          ![logic-container-ingress](./Assets/logic-container-ingress.png)
-
-          
-
-          ![httplogic-container-secrets](./Assets/httplogic-container-secrets.png)
 
             
 
