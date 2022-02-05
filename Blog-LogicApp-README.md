@@ -1,4 +1,4 @@
-# Run LogicApp Anywhere
+# Run Logic App Anywhere
 
 Logic App *Standard* tier or [Single Tenant Logic App](https://docs.microsoft.com/en-us/azure/logic-apps/single-tenant-overview-compare) has now provided the opportunity to build and containerize logic app and thus allowing it to run anywhere - any Cloud or on-Prem. This is hosted as an extension on the Azure Functions runtime and like Azure Function, needs a Storage account to store its state.
 
@@ -6,16 +6,27 @@ This also means that this containerized version of Logic App can now be hosted o
 
 The Only thing that should be considered here is the state of the Logic App which needs to be a Storage account on Azure - apart from this everything else is completely agnostic of the hosting environment! 
 
-This article would demonstrate:
-
-- How to Build a *Logic App* with Standard tier Locally using VS Code
-- How to Containerise the *Logic App* and Push the image to an prive Container Registry 
-- Deploy the Logic App Container on Azure COntainer App (*only for simplicity*)
-- Test the entire flow end to end
-- [Source Code - *Logic Container Ap*p](https://github.com/monojit18/ContainerApps/tree/master/Microservices/LogicContainerApp)
-- [Source Code -  *Logic Storage App*](https://github.com/monojit18/ContainerApps/tree/master/Microservices/LogicStorageApp)
 
 
+## Plan
+
+![logic-storageapp-main](./Assets/logic-storageapp-main.png)
+
+- **Create** a *Container App* hosted in a [Secured Environment](https://docs.microsoft.com/en-us/azure/container-apps/environment)
+
+- **Build** a *Logic App* with *Standard* tier Locally using VS Code
+
+- **Containerise** the *Logic App* and **Push** the image to an private Container Registry 
+
+- **Deploy** the *Logic App* Container on *Azure Container App* (*for simplicity*)
+
+- **Test** the entire flow end-to-end
+
+- [Source Code -  *Logic Storage App*](https://github.com/monojit18/ContainerApps/tree/master/Microservices/LogicStorageApp) - Used in this article
+
+- [Source Code - *Logic Container Ap*p](https://github.com/monojit18/ContainerApps/tree/master/Microservices/LogicContainerApp) - for reference 
+
+  
 
 ## How to Setup
 
@@ -104,13 +115,15 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 - **Run** and test this Logic app as docker container locally
 - **Deploy** the Logic App container onto Azure as a *Container App*
 - **Host** the Logic App inside a Virtual Network (*Secured Environment*)
-- **Expose** the container app with ***Internal Ingress*** - blocking all public access
+- **Expose** the container app with ***No Ingress*** - as no inblound access would be needed for this logic app
 
 #### Logic App in a Container
 
 - Let us first Create and Deploy a Logic app as Docker Container
 
 - Logic App runs an Azure Function locally and hence few tools/extensions need to be installed
+
+  
 
   ##### Pre-Requisites
 
@@ -126,44 +139,40 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
   - VS Code extension for [Docker](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker)
     - This is Optional but recommended; it makes life easy while dealing with *Dockerfile* and *Docker CLI* commands
 
-- Create a Local folder to host all files related Logic App - viz. *LogicContainerApp*
+- Create a Local folder to host all files related Logic App - viz. *LogicStorageApp*
 
 - Open the folder in VS Code
 
 - Create a *New Logic App Project* in this Folder 
 
-  - Choose *Stateful* workflow in the process and name accordingly - viz. *httperesflow*
+  - Choose *Stateful* workflow in the process and name accordingly - viz. *processstgflow*
 
   - This generates all necessary files and sub-folders within the current folder
 
-    - A folder named *httpresflow* is also added which contains the workflow.json file
+    - A folder named *processstgflow* is also added which contains the **workflow.json** file
 
     - This describes the Logic App Actions/triggers
 
-    - This example uses a Http Request/Response type Logic App for simplicity
+    - This example uses one *Blob* trigger and one *Queue* trigger
 
-    - The Logic App would accept a Post body as below and would return back the same as response
-
-      ```json
-      {
-          "Zip": "testzip-2011.zip"
-      }
-      ```
+      ![logic-storageapp-workflow-json](./Assets/logic-storageapp-workflow-json.png)
 
 
 - Right click on the *workflow.json* file and Open the *Logic App Designer* - *this might take few seconds to launch*
 
-- Add Http Request trigger
+- Add **Blob** trigger
 
-  ![logicapp-designer-request](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-designer-request.png)
+  ![logicapp-designer-request](./Assets/logic-storageapp-blob.png)
 
   
 
-- Add Http Response Action
+- Add **Queue** trigger
 
-  ![logicapp-designer-response](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-designer-response.png)
+  ![logicapp-designer-request](./Assets/logic-storageapp-queue.png)
 
-  ![logicapp-designer-httpresflow](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-designer-httpresflow.png)
+  
+
+  ![logicapp-designer-httpresflow](./Assets/logic-storageapp-workflow.png)
 
   
 
@@ -171,120 +180,62 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
 - Right click on the empty area on the workspace folder structure and Open the Context menu
 
+  
+
+  ![logicapp-nuget-menu](./Assets/logic-storageapp-menu.png)
+
+  
+
   - Select the menu options that says - *Convert to Nuget-based Logic App project*
 
-  - This would generate .NET specific files - along with a *LogicContainerApp.csproj* file
+  - This would generate .NET specific files - along with a *LogicStorageApp.csproj* file
 
-    ![logicapp-nuget-menu](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-nuget-menu.png)
+    ![logicapp-nuget-menu](./Assets/logic-storageapp-menu-nuget.png)
 
     
 
+    
+  
   - Open the **local.settings.json** file
-
-    - Replace the value of AzureWebJobsStorage variable with the value from *Storage Account Connection string* created earlier
-
+  
+    - Replace the value of **AzureWebJobsStorage** variable with the value from *Storage Account Connection string* created earlier
+  
   - Add a **Dockerfile** in the workspace
-
+  
     ```bash
     FROM mcr.microsoft.com/azure-functions/node:3.0
     
     ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
          AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
-         FUNCTIONS_V2_COMPATIBILITY_MODE=true \     
+       FUNCTIONS_V2_COMPATIBILITY_MODE=true \     
          AzureWebJobsStorage='' \
-         AZURE_FUNCTIONS_ENVIRONMENT=Development \
+       AZURE_FUNCTIONS_ENVIRONMENT=Development \
          WEBSITE_HOSTNAME=localhost \
-         WEBSITE_SITE_NAME=logiccontainerapp
+       WEBSITE_SITE_NAME=logicstorageapp
     
-    COPY ./bin/Debug/netcoreapp3.1 /home/site/wwwroot
+  COPY ./bin/Debug/netcoreapp3.1 /home/site/wwwroot
     ```
+  
+    
 
     - **WEBSITE_SITE_NAME** - this is the name by which entries are created in Storage Account by the Logic App while caching its state
 
       
 
   - **Build** docker image
-
+  
     ```bash
-    docker build -t <repo_name>/<image_name>:<tag> .
+  docker build -t <repo_name>/<image_name>:<tag> .
     ```
 
     
 
-  - **Create** the Logic App Container
+  - **Create** and **Run** the Logic App Container
 
     ```bash
-    docker run --name logiccontainerapp -e AzureWebJobsStorage=$azureWebJobsStorage -d -p 8080:80 <repo_name>/<image_name>:<tag>
+  docker run --name logicstorageapp -e AzureWebJobsStorage=$azureWebJobsStorage -d -p 8080:80 <repo_name>/<image_name>:<tag>
     ```
 
-    
-
-  - Let us now **Run** the logic app locally as a Docker container
-
-    - Open the Storage account created earlier
-
-      - Open the *Containers*
-
-      - Open *azure-webjobs-secrets* blob
-
-        ![logicapp-webjobs-secrets-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-webjobs-secrets-1.png)
-
-        ![logicapp-webjobs-secrets-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-webjobs-secrets-2.png)
-
-        ![logicapp-webjobs-secrets-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-webjobs-secrets-3.png)    
-        
-      - Get the value of the **master** key in the **host.json** file
-      
-        ![logicapp-host-json](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-host-json.png)  
-      
-      - Open *POSTMAN* or any Rest client of choice like **curl**
-      
-        ```bash
-        http://localhost:8080/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>
-        ```
-      
-      - This would return the Post callback Url for Http triggered Logic App
-      
-        ```json
-        {
-            "value": "https://localhost:443/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>",
-            "method": "POST",
-            "basePath": "https://localhost/api/httpresflow/triggers/manual/invoke",
-            "queries": {
-                "api-version": "2020-05-01-preview",
-                "sp": "/triggers/manual/run",
-                "sv": "1.0",
-                "sig": "<value>"
-            }
-        }
-        ```
-      
-      - Copy the value of the **value** parameter from the json response
-      
-      - Make following Http call
-      
-        ```bash
-        http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
-        ```
-      
-      - Post Body
-      
-        ```json
-        {
-            "Zip": "testzip-2011.zip"
-        }
-        ```
-      
-      - Check the response coming back from Logic App as below
-      
-        ```bash
-        {
-            "Zip": "testzip-2011.zip"
-        }
-        ```
-      
-        
-    
 
 
   #### Setup Azure Container App
@@ -332,46 +283,33 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
   - Create Azure Container App with this image
 
     ```bash
-    logicappImageName="$registryServer/logiccontainerapp:v1.0.0"
-          azureWebJobsStorage="<storage_account_connection_string"
+    logicappImageName="$registryServer/logicstorageapp:v1.0.0"
+    azureWebJobsStorage=""
+    blobConnectionString=""
+    queueConnectionKey=""
           
-    az containerapp create --name logicontainerapp --resource-group $resourceGroup \
-        --image $logicappImageName --environment $securedEnvironment \
-        --registry-login-server $registryServer --registry-username $registryUserName \
-        --registry-password $registryPassword \
-        --ingress external --target-port 80 --transport http \
-        --secrets azurewebjobsstorage=$azureWebJobsStorage \
-        --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
+    az containerapp create --name logicstorageapp --resource-group $resourceGroup \
+      --image $logicappImageName --environment $securedEnvironment \
+      --registry-login-server $registryServer --registry-username $registryUserName \
+      --registry-password $registryPassword \
+      --ingress internal --target-port 80 --transport http \
+      --secrets azurewebjobsstorage=$azureWebJobsStorage,bloconnstring=$blobConnectionString,queueconnstring=$queueConnectionKey \
+      --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage,AzureBlob_connectionString=secretref:bloconnstring,azurequeues-connectionKey=secretref:queueconnstring"
     ```
-
-  - Note down the Logic App ingress url
-
-    ![httplogic-container-overview](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/httplogic-container-overview.png)
-
-    
 
 ## Test End-to-End 
 
-Grab the FQDN of the APIM Container App from the portal
+- Let us now **Test** the logic app locally as a Docker container
 
-![apim-container-overview](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/apim-container-overview.png)
+  - Upload image to the **Blob** container e.g. *logicblob*
 
-The FQDN can be obtained through Azure CLI as well
+    ![logicapp-nuget-menu](./Assets/logic-storageapp-test-blob.png)
 
-```bash
-fqdn=$(az containerapp show -g $resourceGroup -n apimcontainerapp --query="configuration.ingress.fqdn")
-```
+    
 
-Make a call to the API URL as below and receive the response back
+  - Check the image name being added to the **Queue** e.g. *logicqueue*
 
-```bash
-curl -k -X POST --data '{"zip":"test.zip"}' https://$fqdn/container/api/logicapp/
-....
-
-{"zip":"test.zip"}
-```
-
-
+    ![logicapp-nuget-menu](./Assets/logic-storageapp-test-queue.png)
 
 ## References
 
