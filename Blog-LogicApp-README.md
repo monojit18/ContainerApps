@@ -1,6 +1,6 @@
 # Run Logic App Anywhere
 
-Logic App *Standard* tier or [Single Tenant Logic App](https://docs.microsoft.com/en-us/azure/logic-apps/single-tenant-overview-compare) has now provided the opportunity to build and containerize logic app and thus allowing it to run anywhere - any Cloud or on-Prem. This is hosted as an extension on the Azure Functions runtime and like Azure Function, needs a Storage account to store its state.
+Logic App *Standard* tier or [Single Tenant Logic App](https://docs.microsoft.com/en-us/azure/logic-apps/single-tenant-overview-compare) has now provided the opportunity to build and containerize logic app and thus allowing it to run anywhere - *any Cloud, On-Prem or any Infrastructure*. This is hosted as an extension on the Azure Functions runtime and like Azure Function, needs a Storage account to store its state.
 
 This also means that this containerized version of Logic App can now be hosted on managed K8s services like [AKS](https://docs.microsoft.com/en-us/azure/aks/) as well as Serverless Container offerings like [Azure Container Apps](https://docs.microsoft.com/en-us/azure/container-apps/) or on-Prem Bare metal. This implies that developers can now design, develop, build and run Logic App end-to-end locally; finally when everuthing is running fine and then deploy anywhere as they want!
 
@@ -235,6 +235,8 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
     ```bash
   docker run --name logicstorageapp -e AzureWebJobsStorage=$azureWebJobsStorage -d -p 8080:80 <repo_name>/<image_name>:<tag>
     ```
+
+  
 
 
 
