@@ -6,5 +6,6 @@ Misc
 **/bin
 **/obj
 **/local.settings.json
+**/connections.json
 **/!.dockerignore
 !*.md

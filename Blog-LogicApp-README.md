@@ -1,26 +1,17 @@
-# Connected Microservices with Container Apps
+# Run LogicApp Anywhere
 
-[Azure Container Apps(Preview)](https://docs.microsoft.com/en-us/azure/container-apps/overview) enables users to run containerized applications in a completely Serverless manner providing complete isolation of *Orchestration* and *Infrastructure*. Applications built on Azure Container Apps can dynamically scale based on the various triggers as well as [KEDA-supported scalers](https://keda.sh/docs/scalers/)
+Logic App *Standard* tier or [Single Tenant Logic App](https://docs.microsoft.com/en-us/azure/logic-apps/single-tenant-overview-compare) has now provided the opportunity to build and containerize logic app and thus allowing it to run anywhere - any Cloud or on-Prem. This is hosted as an extension on the Azure Functions runtime and like Azure Function, needs a Storage account to store its state.
 
-Features of Azure Container Apps include:
+This also means that this containerized version of Logic App can now be hosted on managed K8s services like [AKS](https://docs.microsoft.com/en-us/azure/aks/) as well as Serverless Container offerings like [Azure Container Apps](https://docs.microsoft.com/en-us/azure/container-apps/) or on-Prem Bare metal. This implies that developers can now design, develop, build and run Logic App end-to-end locally; finally when everuthing is running fine and then deploy anywhere as they want!
 
-- Run multiple **Revisions** of containerized applications
-- **Autoscale** apps based on any KEDA-supported scale trigger
-- Enable HTTPS **Ingress** without having to manage other Azure infrastructure like *L7 Load Balancers* 
-- Easily implement **Blue/Green** deployment and perform **A/B Testing** by splitting traffic across multiple versions of an application
-- **Azure CLI** extension or **ARM** templates to automate management of containerized applications
-- Manage Application **Secrets** securely
-- View **Application Logs** using *Azure Log Analytics*
-- **Manage** multiple Container Apps using [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview) feature of Azure APIM providing rich APIM Policies and Authentication mechainsms to the Container Apps
+The Only thing that should be considered here is the state of the Logic App which needs to be a Storage account on Azure - apart from this everything else is completely agnostic of the hosting environment! 
 
 This article would demonstrate:
 
-- [How to Setup Azure Container Apps using Azure CLI](#How to Setup)
-- [How to Deploy a containerized *Logic App* as Azure Container App](#Deploy Azure Logic App as Container App)
-- [How to Deploy a containerized *Azure Function* as Azure Container App](#Deploy Azure Function as Container App)
-- [Deploy the *Self-hosted Gateway* component of an APIM instance as a Container App itself](#Deploy Self-hosted Gateway as Container App)
-- [Integrate the two Container Apps with APIM Container App](#Integrate All using APIM)
-- [Test the entire flow end to end](#Test End-to-End)
+- How to Build a *Logic App* with Standard tier Locally using VS Code
+- How to Containerise the *Logic App* and Push the image to an prive Container Registry 
+- Deploy the Logic App Container on Azure COntainer App (*only for simplicity*)
+- Test the entire flow end to end
 
 
 
@@ -246,24 +237,26 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
 
       - Get the value of the **master** key in the **host.json** file
-
+    
         ![logicapp-host-json](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-host-json.png)
 
-    
 
-    
+​    
+
+​    
 
 
     - Open *POSTMAN* or any Rest client of choice like **curl**
-
+    
       ```bash
       http://localhost:8080/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>
       ```
 
-      
+
+​      
 
       - This would return the Post callback Url for Http triggered Logic App
-
+    
         ```json
         {
             "value": "https://localhost:443/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>",
@@ -277,31 +270,34 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
             }
         }
         ```
-
+    
       - Copy the value of the **value** parameter from the json response
 
-        
+
+​        
 
     - Make following Http call
-
+    
       ```bash
       http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
       ```
 
-      
+
+​      
 
     - Post Body
-
+    
       ```json
       {
           "Zip": "testzip-2011.zip"
       }
       ```
 
-      
+
+​      
 
     - Check the response coming back from Logic App as below
-
+    
       ```json
       {
           "Zip": "testzip-2011.zip"

@@ -1,0 +1,29 @@
+{
+  "serviceProviderConnections": {
+    "AzureBlob": {
+      "parameterValues": {
+        "connectionString": "@appsetting('AzureBlob_connectionString')"
+      },
+      "serviceProvider": {
+        "id": "/serviceProviders/AzureBlob"
+      },
+      "displayName": "az-blob-conn"
+    }
+  },
+  "managedApiConnections": {
+    "azurequeues": {
+      "api": {
+        "id": "<id>"
+      },
+      "connection": {
+        "id": "<id>"
+      },
+      "connectionRuntimeUrl": "",
+      "authentication": {
+        "type": "Raw",
+        "scheme": "Key",
+        "parameter": "@appsetting('azurequeues-connectionKey')"
+      }
+    }
+  }
+}
