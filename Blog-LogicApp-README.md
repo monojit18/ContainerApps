@@ -12,6 +12,8 @@ This article would demonstrate:
 - How to Containerise the *Logic App* and Push the image to an prive Container Registry 
 - Deploy the Logic App Container on Azure COntainer App (*only for simplicity*)
 - Test the entire flow end to end
+- [Source Code - *Logic Container Ap*p](https://github.com/monojit18/ContainerApps/tree/master/Microservices/LogicContainerApp)
+- [Source Code -  *Logic Storage App*](https://github.com/monojit18/ContainerApps/tree/master/Microservices/LogicStorageApp)
 
 
 
@@ -229,34 +231,20 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
         ![logicapp-webjobs-secrets-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-webjobs-secrets-2.png)
 
-        ![logicapp-webjobs-secrets-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-webjobs-secrets-3.png)
-
-    
-
-    
-
-
+        ![logicapp-webjobs-secrets-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-webjobs-secrets-3.png)    
+        
       - Get the value of the **master** key in the **host.json** file
-    
-        ![logicapp-host-json](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-host-json.png)
-
-
-​    
-
-​    
-
-
-    - Open *POSTMAN* or any Rest client of choice like **curl**
-    
-      ```bash
-      http://localhost:8080/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>
-      ```
-
-
-​      
-
+      
+        ![logicapp-host-json](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-host-json.png)  
+      
+      - Open *POSTMAN* or any Rest client of choice like **curl**
+      
+        ```bash
+        http://localhost:8080/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>
+        ```
+      
       - This would return the Post callback Url for Http triggered Logic App
-    
+      
         ```json
         {
             "value": "https://localhost:443/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>",
@@ -270,39 +258,33 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
             }
         }
         ```
-    
+      
       - Copy the value of the **value** parameter from the json response
-
-
-​        
-
-    - Make following Http call
+      
+      - Make following Http call
+      
+        ```bash
+        http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
+        ```
+      
+      - Post Body
+      
+        ```json
+        {
+            "Zip": "testzip-2011.zip"
+        }
+        ```
+      
+      - Check the response coming back from Logic App as below
+      
+        ```bash
+        {
+            "Zip": "testzip-2011.zip"
+        }
+        ```
+      
+        
     
-      ```bash
-      http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
-      ```
-
-
-​      
-
-    - Post Body
-    
-      ```json
-      {
-          "Zip": "testzip-2011.zip"
-      }
-      ```
-
-
-​      
-
-    - Check the response coming back from Logic App as below
-    
-      ```json
-      {
-          "Zip": "testzip-2011.zip"
-      }
-      ```
 
 
   #### Setup Azure Container App
@@ -367,220 +349,6 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
     ![httplogic-container-overview](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/httplogic-container-overview.png)
 
     
-
-## Deploy Azure Function as Container App
-
-Build an Azure **Function App** with Http POST trigger - viz. **HttpLogicContainerApp**
-
-- Azure Function would call the above logic app (i.e. *LogicContainerApp*) sending some Json as POST body
-- Function would recieve the http rspons from Logic App and return back to the caller
-- **Run** and test this function app as docker container locally
-- **Deploy** the Function App container onto Azure as a *Container App*
-- **Host** the Function App inside a Virtual Network (*Secured Environment*)
-- **Expose** the container app with ***Internal Ingress*** - blocking all public access
-
-This function will be triggerred by a http Post call
-
-- This is going to invoke Logic App internally
-
-- Return the response back to the caller
-
-- Before we Deploy the function app, let us look at its code
-
-
-​      
-
-```c#
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-namespace HttpContainerApps
-  {
-      public static class HttpContainerApps
-      {
-          [FunctionName("container")]
-          public static async Task<IActionResult> Run(
-              [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
-              ILogger log)
-          {
-              log.LogInformation("C# HTTP trigger function processed a request.");
-  
-              var name = req.Query["name"];
-              var cl = new HttpClient();
-  
-              var uri = $"http://httpcontainerapp-secured.internal.greensea-4ecd9ebc.eastus.azurecontainerapps.io/api/container?name={name}";
-              var res = await cl.GetAsync(uri);
-              var response = await res.Content.ReadAsStringAsync();
-              log.LogInformation($"Status:{res.StatusCode}");
-              log.LogInformation($"Response:{response}-v1.0.4");
-              response = $"Hello, {response}-v1.0.4";
-              // var response = $"Secured, {name}-v1.0.3";
-              return new OkObjectResult(response);
-          }
-      }
-  }      
-```
-
-- Deploy Azure Function app as Container App
-
-```bash
- 
-httpImageName="$registryServer/httplogiccontainerapp:v1.0.5" logicAppCallbackUrl="https://<logicontainerapp_internal_ingress_url>/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>"
-  
-  logicAppPostUrl="https://<logicontainerapp_internal_ingress_url>/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig={0}"
-  
-  az containerapp create --name httplogiccontainerapp --resource-group $resourceGroup \
-    --image $httpImageName --environment $securedEnvironment \
-    --registry-login-server $registryServer --registry-username $registryUserName \
-    --registry-password $registryPassword \
-    --ingress internal --target-port 80 --transport http \
-    --secrets azurewebjobsstorage=$azureWebJobsStorage,logicappcallbackurl=$logicAppCallbackUrl,logicappposturl=$logicAppPostUrl \
-    --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage,LOGICAPP_CALLBACK_URL=secretref:logicappcallbackurl,LOGICAPP_POST_URL=secretref:logicappposturl"
-```
-
-- This Container App is with Ingress type **Internal** so this would be at exposed publicly      
-
-  
-
-## Deploy Self-hosted Gateway as Container App
-
-Integrate both the Container Apps (*Function App* and  *Logic App*) with **Azure APIM**
-
-- **Create** an APIM instance on Azure with a [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview)
-- **Deploy** Self-hosted APIM as *Container App* and in the same *Secured Environment* as above
-- **Add** two Container Apps (*as deployed above*) as backend for the APIM
-- **Expose** the APIM Container App with ***External Ingress*** thus making it the only public facing endpoint for the entire system
-- APIM Container App (*Self-hosted Gateway*) would be able to call the internal Container Apps since being part of the same Secured Environment
-
-- Select gateway option in APIM in the Azure Portal
-
-  ![apim-gateway-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/apim-gateway-1.png)
-
-  
-
-- Get the *Endpoint Url* and *Auth Token* from the portal
-
-  ![apim-gateway-2](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/apim-gateway-2.png)
-
-  
-
-- Define ARM template for APIM Container App
-
-```json
-{
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "parameters": {
-              "containerappName": {
-                  "defaultValue": "apimcontainerapp",
-                  "type": "String"
-              },
-              "location": {
-                  "defaultValue": "eastus",
-                  "type": "String"
-              },
-              "environmentName": {
-                  "defaultValue": "secure-env",
-                  "type": "String"
-              },
-              "serviceEndpoint": {
-                  "defaultValue": "",
-                  "type": "String"
-              },
-              "serviceAuth": {
-                  "defaultValue": "",
-                  "type": "String"
-              }
-          },
-          "variables": {},
-          "resources": [
-              {
-                  "apiVersion": "2021-03-01",
-                  "type": "Microsoft.Web/containerApps",
-                  "name": "[parameters('containerappName')]",
-                  "location": "[parameters('location')]",
-                  "properties": {
-                      "kubeEnvironmentId": "[resourceId('Microsoft.Web/kubeEnvironments', parameters('environmentName'))]",
-                      "configuration": {                  
-                          "ingress": {
-                              "external": true,
-                              "targetPort": 8080,
-                              "allowInsecure": false,
-                              "traffic": [
-                                  {
-                                      "latestRevision": true,
-                                      "weight": 100
-                                  }
-                              ]
-                          }
-                      },
-                      "template": {
-                          // "revisionSuffix": "revapim",
-                          "containers": [
-                              {
-                                  "name": "conainerapp-apim-gateway",
-                                  "image": "mcr.microsoft.com/azure-api-management/gateway:latest",                            
-                                  "env": [
-                                      {
-                                          "name": "config.service.endpoint",
-                                          "value": "[parameters('serviceEndpoint')]"
-                                      },
-                                      {
-                                          "name": "config.service.auth",
-                                          "value": "[parameters('serviceAuth')]"
-                                      }
-                                  ],
-                                  "resources": {
-                                      "cpu": 0.5,
-                                      "memory": "1Gi"
-                                  }
-                              }
-                          ],
-                          "scale": {
-                              "minReplicas": 1,
-                              "maxReplicas": 3
-                          }
-                      }
-                  }
-              }
-          ]
-      }
-```
-
-
-- Deploy APIM as Container App
-
-```bash
-apimappImageName="mcr.microsoft.com/azure-api-management/gateway:latest"
-serviceEndpoint="<service_Endpoint>"
-serviceAuth="<service_Auth>"
-
-az deployment group create -f ./api-deploy.json -g $resourceGroup \
-  --parameters serviceEndpoint=$serviceEndpoint serviceAuth=$serviceAuth
-```
-
-
-
-## Integrate All using APIM
-
-- Add Container Apps as APIM back end
-
-- The Web Service URL would be the *Internal Ingress* url of the *Http Container App*
-
-  ![apim-api-main](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/apim-api-1.png)
-
-  ![apim-api-main](./Assets/apim-api-2.png)
-
-  ![apim-api-main](./Assets/apim-api-3.png)
-
-
 
 ## Test End-to-End 
 
