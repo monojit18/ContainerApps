@@ -162,15 +162,15 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
 - Add Http Request trigger
 
-  ![logicapp-designer-request](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-designer-request.png)
+  ![logicapp-designer-request](./Assets/logicapp-designer-request.png)
 
   
 
 - Add Http Response Action
 
-  ![logicapp-designer-response](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-designer-response.png)
+  ![logicapp-designer-response](./Assets/logicapp-designer-response.png)
 
-  ![logicapp-designer-httpresflow](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-designer-httpresflow.png)
+  ![logicapp-designer-httpresflow](./Assets/logicapp-designer-httpresflow.png)
 
   
 
@@ -182,7 +182,7 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
   - This would generate .NET specific files - along with a *LogicContainerApp.csproj* file
 
-    ![logicapp-nuget-menu](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-nuget-menu.png)
+    ![logicapp-nuget-menu](./Assets/logicapp-nuget-menu.png)
 
     
 
@@ -234,11 +234,11 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
       - Open *azure-webjobs-secrets* blob
 
-        ![logicapp-webjobs-secrets-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-webjobs-secrets-1.png)
+        ![logicapp-webjobs-secrets-1](./Assets/logicapp-webjobs-secrets-1.png)
 
-        ![logicapp-webjobs-secrets-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-webjobs-secrets-2.png)
+        ![logicapp-webjobs-secrets-1](./Assets/logicapp-webjobs-secrets-2.png)
 
-        ![logicapp-webjobs-secrets-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-webjobs-secrets-3.png)
+        ![logicapp-webjobs-secrets-1](./Assets/logicapp-webjobs-secrets-3.png)
 
     
 
@@ -246,24 +246,26 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
 
       - Get the value of the **master** key in the **host.json** file
-
-        ![logicapp-host-json](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/logicapp-host-json.png)
-
     
+        ![logicapp-host-json](./Assets/logicapp-host-json.png)
 
-    
+
+​    
+
+​    
 
 
     - Open *POSTMAN* or any Rest client of choice like **curl**
-
+    
       ```bash
       http://localhost:8080/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>
       ```
 
-      
+
+​      
 
       - This would return the Post callback Url for Http triggered Logic App
-
+    
         ```json
         {
             "value": "https://localhost:443/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>",
@@ -277,31 +279,34 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
             }
         }
         ```
-
+    
       - Copy the value of the **value** parameter from the json response
 
-        
+
+​        
 
     - Make following Http call
-
+    
       ```bash
       http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
       ```
 
-      
+
+​      
 
     - Post Body
-
+    
       ```json
       {
           "Zip": "testzip-2011.zip"
       }
       ```
 
-      
+
+​      
 
     - Check the response coming back from Logic App as below
-
+    
       ```json
       {
           "Zip": "testzip-2011.zip"
@@ -368,7 +373,7 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
   - Note down the Logic App ingress url
 
-    ![httplogic-container-overview](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/httplogic-container-overview.png)
+    ![httplogic-container-overview](./Assets/httplogic-container-overview.png)
 
     
 
@@ -465,13 +470,13 @@ Integrate both the Container Apps (*Function App* and  *Logic App*) with **Azure
 
 - Select gateway option in APIM in the Azure Portal
 
-  ![apim-gateway-1](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/apim-gateway-1.png)
+  ![apim-gateway-1](./Assets/apim-gateway-1.png)
 
   
 
 - Get the *Endpoint Url* and *Auth Token* from the portal
 
-  ![apim-gateway-2](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/apim-gateway-2.png)
+  ![apim-gateway-2](./Assets/apim-gateway-2.png)
 
   
 
@@ -578,7 +583,7 @@ az deployment group create -f ./api-deploy.json -g $resourceGroup \
 
 - The Web Service URL would be the *Internal Ingress* url of the *Http Container App*
 
-  ![apim-api-main](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/apim-api-1.png)
+  ![apim-api-main](./Assets/apim-api-1.png)
 
   ![apim-api-main](./Assets/apim-api-2.png)
 
@@ -590,7 +595,7 @@ az deployment group create -f ./api-deploy.json -g $resourceGroup \
 
 Grab the FQDN of the APIM Container App from the portal
 
-![apim-container-overview](/Users/monojitdattams/Development/Projects/Workshops/AKSWorkshop/ContainerApps/Assets/apim-container-overview.png)
+![apim-container-overview](./Assets/apim-container-overview.png)
 
 The FQDN can be obtained through Azure CLI as well
 
