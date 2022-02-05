@@ -239,33 +239,21 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
         ![logicapp-webjobs-secrets-1](./Assets/logicapp-webjobs-secrets-2.png)
 
         ![logicapp-webjobs-secrets-1](./Assets/logicapp-webjobs-secrets-3.png)
-
-    
-
-    
-
-
+      
+        
+      
       - Get the value of the **master** key in the **host.json** file
-    
-        ![logicapp-host-json](./Assets/logicapp-host-json.png)
-
-
-​    
-
-​    
-
-
-    - Open *POSTMAN* or any Rest client of choice like **curl**
-    
-      ```bash
-      http://localhost:8080/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>
-      ```
-
-
-​      
-
+      
+        ![logicapp-host-json](./Assets/logicapp-host-json.png)  
+      
+      - Open *POSTMAN* or any Rest client of choice like **curl**
+      
+        ```bash
+        http://localhost:8080/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>
+        ```
+      
       - This would return the Post callback Url for Http triggered Logic App
-    
+      
         ```json
         {
             "value": "https://localhost:443/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>",
@@ -279,39 +267,31 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
             }
         }
         ```
-    
+      
       - Copy the value of the **value** parameter from the json response
-
-
-​        
-
-    - Make following Http call
+      
+      - Make following Http call
+      
+        ```bash
+        http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
+        ```
+      
+      - Post Body
+      
+        ```json
+        {
+            "Zip": "testzip-2011.zip"
+        }
+        ```
+      
+      - Check the response coming back from Logic App as below
+      
+        ```json
+        {
+            "Zip": "testzip-2011.zip"
+        }
+        ```
     
-      ```bash
-      http://localhost:8080/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<value>
-      ```
-
-
-​      
-
-    - Post Body
-    
-      ```json
-      {
-          "Zip": "testzip-2011.zip"
-      }
-      ```
-
-
-​      
-
-    - Check the response coming back from Logic App as below
-    
-      ```json
-      {
-          "Zip": "testzip-2011.zip"
-      }
-      ```
 
 
   #### Setup Azure Container App
