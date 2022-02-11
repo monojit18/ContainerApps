@@ -1,0 +1,273 @@
+tenantId=""
+subscriptionId=""
+resourceGroup="serverless-workshop-rg"
+monitoringResourceGroup="monitoring-workshop-rg"
+location="eastus"
+logWorkspace="container-workshop-lw"
+basicEnvironment="basic-env"
+securedEnvironment="secure-env"
+apimSecuredEnvironment="apim-secure-env"
+acrName=""
+registryServer=""
+registryUserName=""
+registryPassword=""
+storageName=""
+containerAppVnetName="containerapp-workshop-vnet"
+containerAppVnetId=
+controlPlaneSubnetName="containerapp-cp-subnet"
+controlPlaneSubnetId=
+appsSubnetName="containerapp-app-subnet"
+appsSubnetId=
+
+ContaierApp Setup & Deploy
+=============================
+
+az login --tenant $tenantId
+
+az extension add \
+  --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl
+
+#az provider register --namespace Microsoft.Web
+az provider show --namespace Microsoft.Web
+
+#az group create --name $resourceGroup --location $location
+#az group create --name $monitoringResourceGroup --location $location
+
+az monitor log-analytics workspace create --resource-group $monitoringResourceGroup --workspace-name $logWorkspace
+
+logWorkspaceId=$(az monitor log-analytics workspace show --query customerId -g $monitoringResourceGroup -n $logWorkspace -o tsv)
+logWorkspaceSecret=$(az monitor log-analytics workspace get-shared-keys --query primarySharedKey -g $monitoringResourceGroup -n $logWorkspace -o tsv)
+
+containerAppVnetId=$(az network vnet show -n $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+az containerapp env create --name $basicEnvironment --resource-group $resourceGroup \
+  --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location
+
+az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
+  --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location \
+  --controlplane-subnet-resource-id $controlPlaneSubnetId \
+  --app-subnet-resource-id $appsSubnetId --internal-only
+
+az containerapp env delete --name $securedEnvironment --resource-group $resourceGroup --yes
+
+blobcontainerapp
+============================================================
+
+k create secret generic blobcontainerapp-secret -n serverless --from-literal=AzureWebJobsStorage='DefaultEndpointsProtocol=https;AccountName=srvlswkstorage;AccountKey=QTrV7WSaZFK1UraurcKA1yi5fRmuw89ipTD4nq9+cpEnrsM4e7/ijNl3hCFA6/JsyOR6c1f5ARTq9JJKcDVXaA==;EndpointSuffix=core.windows.net' --from-literal=AzureSQLConnectionString='Server=tcp:bus-server490731.database.windows.net,1433;Initial Catalog=bus-db;Persist Security Info=False;User ID=cloudadmin;Password=P@ssword@2022;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+k delete secrets/blobcontainerapp-secret -n serverless
+
+az acr build -t blobcontainerapp:v1.0.0 -r $acrName .
+az acr build -t blobcontainerapp:v1.0.1 -r $acrName .
+
+blobImageName="$registryServer/blobcontainerapp:v1.0.0"
+azureWebJobsStorage=""
+
+az containerapp create --name blobcontainerapp --resource-group $resourceGroup \
+  --image $blobImageName --environment $basicEnvironment \
+  --registry-login-server $registryServer --registry-username $registryUserName \
+  --registry-password $registryPassword \
+  --min-replicas 1 --max-replicas 10 \
+  --secrets azurewebjobsstorage=$azureWebJobsStorage \
+  --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
+
+az deployment group create -f ./blob-deploy.json -g $resourceGroup \
+--parameters imageName=$blobImageName acrServer=$registryServer \
+acrUsername=$registryUserName acrPassword=$registryPassword azureWebjobsStorage=$azureWebJobsStorage
+
+blobImageName="$registryServer/blobcontainerapp:v1.0.2"
+az containerapp update --name blobcontainerapp --resource-group $resourceGroup --image $blobImageName
+az containerapp update --name blobcontainerapp --resource-group $resourceGroup --ingress none
+#az containerapp delete --name blobcontainerapp --resource-group $resourceGroup --yes
+
+========================================================================================================================
+
+httpcontainerapp
+============================================================
+az login --tenant $tenantId
+
+az acr build -t httpcontainerapp:v1.0.0 -r $acrName .
+az acr build -t httpcontainerapp:v1.0.1 -r $acrName .
+az acr build -t httpcontainerapp:v1.0.2 -r $acrName .
+az acr build -t httpcontainerapp:v1.0.3 -r $acrName .
+az acr build -t httpcontainerapp:v1.0.4 -r $acrName .
+
+az acr build -t httplogiccontainerapp:v1.0.5 -r $acrName .
+
+httpImageName="$registryServer/httpcontainerapp:v1.0.0"
+azureWebJobsStorage=""
+az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
+--image $httpImageName --environment $basicEnvironment \
+--registry-login-server $registryServer --registry-username $registryUserName \
+--registry-password $registryPassword \
+--ingress external --target-port 80 --transport http \
+--min-replicas 1 --max-replicas 5 \
+--cpu 0.25 --memory 0.5Gi \
+--secrets azurewebjobsstorage=$azureWebJobsStorage \
+--environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
+
+az deployment group create -f ./http-deploy.json -g $resourceGroup \
+--parameters imageName=$httpImageName revisionSuffix=rv1 \
+acrServer=$registryServer acrUsername=$registryUserName acrPassword=$registryPassword \
+azureWebjobsStorage=$azureWebJobsStorage
+
+httpImageName="$registryServer/httpcontainerapp:v1.0.2"
+revisionSuffix=rv2
+az containerapp update --name httpcontainerapp --resource-group $resourceGroup --image $httpImageName
+
+az deployment group create -f ./http-deploy.json -g $resourceGroup \
+--parameters imageName=$httpImageName revisionSuffix=$revisionSuffix \
+acrServer=$registryServer acrUsername=$registryUserName acrPassword=$registryPassword \
+azureWebjobsStorage=$azureWebJobsStorage
+
+az containerapp revision list --name httpcontainerapp --resource-group $resourceGroup --query="[].name"
+
+az deployment group create -f ./http-deploy.json -g $resourceGroup \
+--parameters imageName=$httpImageName \
+acrServer=$registryServer acrUsername=$registryUserName acrPassword=$registryPassword \
+azureWebjobsStorage=$azureWebJobsStorage
+
+az containerapp update --traffic-weight "httpcontainerapp--rv1=50,httpcontainerapp--rv2=50" \
+--name httpcontainerapp --resource-group $resourceGroup
+
+az containerapp update --traffic-weight "httpcontainerapp--rv1=0,httpcontainerapp--rv2=100" \
+--name httpcontainerapp --resource-group $resourceGroup
+
+az containerapp revision deactivate --name "httpcontainerapp--rv1" --app httpcontainerapp \
+--resource-group $resourceGroup
+
+az containerapp revision activate --name "httpcontainerapp--rv1" --app httpcontainerapp \
+--resource-group $resourceGroup
+
+httpcontainerapp - Secured
+============================
+
+httpImageName="$registryServer/httpcontainerapp:v1.0.3"
+az containerapp create --name httpcontainerapp-secured --resource-group $resourceGroup \
+  --image $httpImageName --environment $securedEnvironment \
+  --registry-login-server $registryServer --registry-username $registryUserName \
+  --registry-password $registryPassword \
+  --ingress internal --target-port 80 --transport http \
+  --min-replicas 1 --max-replicas 5 \
+  --cpu 0.25 --memory 0.5Gi \
+  --secrets azurewebjobsstorage=$azureWebJobsStorage \
+  --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
+
+#az containerapp delete --name httpcontainerapp-secured --resource-group $resourceGroup --yes
+
+httpImageName="$registryServer/httpcontainerapp:v1.0.4"
+az containerapp create --name httpcontainerapp-mult --resource-group $resourceGroup \
+  --image $httpImageName --environment $securedEnvironment \
+  --registry-login-server $registryServer --registry-username $registryUserName \
+  --registry-password $registryPassword \
+  --ingress external --target-port 80 --transport http \
+  --min-replicas 1 --max-replicas 5 \
+  --cpu 0.25 --memory 0.5Gi \
+  --secrets azurewebjobsstorage=$azureWebJobsStorage \
+  --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
+
+#az containerapp delete --name httpcontainerapp-mult --resource-group $resourceGroup --yes
+
+========================================================================================================================
+
+logiccontainerapp
+============================================================
+az acr build -t logiccontainerapp:v1.0.0 -r $acrName .
+
+logicappImageName="$registryServer/logiccontainerapp:v1.0.0"
+azureWebJobsStorage=""
+
+az containerapp create --name logicontainerapp --resource-group $resourceGroup \
+  --image $logicappImageName --environment $securedEnvironment \
+  --registry-login-server $registryServer --registry-username $registryUserName \
+  --registry-password $registryPassword \
+  --ingress internal --target-port 80 --transport http \
+  --secrets azurewebjobsstorage=$azureWebJobsStorage \
+  --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
+
+#az containerapp delete --name logicontainerapp --resource-group $resourceGroup --yes
+
+httplogiccontainerapp
+============================================================
+httpImageName="$registryServer/httplogiccontainerapp:v1.0.5"
+logicAppCallbackUrl=""
+logicAppPostUrl=""
+
+az containerapp create --name httplogiccontainerapp --resource-group $resourceGroup \
+  --image $httpImageName --environment $securedEnvironment \
+  --registry-login-server $registryServer --registry-username $registryUserName \
+  --registry-password $registryPassword \
+  --ingress internal --target-port 80 --transport http \
+  --secrets azurewebjobsstorage=$azureWebJobsStorage,logicappcallbackurl=$logicAppCallbackUrl,logicappposturl=$logicAppPostUrl \
+  --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage,LOGICAPP_CALLBACK_URL=secretref:logicappcallbackurl,LOGICAPP_POST_URL=secretref:logicappposturl"
+
+#az containerapp delete --name httplogiccontainerapp --resource-group $resourceGroup --yes
+
+========================================================================================================================
+
+apimcontainerapp
+============================================================
+apimappImageName="mcr.microsoft.com/azure-api-management/gateway:latest"
+serviceEndpoint=""
+serviceAuth=""
+
+az deployment group create -f ./api-deploy.json -g $resourceGroup \
+--parameters serviceEndpoint=$serviceEndpoint serviceAuth=$serviceAuth
+
+az containerapp show -g $resourceGroup -n apimcontainerapp --query="configuration.ingress.fqdn"
+
+#az containerapp delete --name apimcontainerapp --resource-group $resourceGroup --yes
+
+========================================================================================================================
+
+logicstorageapp
+============================================================
+az acr build -t logicstorageapp:v1.0.0 -r $acrName .
+
+logicappImageName="$registryServer/logicstorageapp:v1.0.0"
+azureWebJobsStorage=""
+blobConnectionString=""
+queueConnectionKey=""
+
+az containerapp create --name logicstorageapp --resource-group $resourceGroup \
+  --image $logicappImageName --environment $securedEnvironment \
+  --registry-login-server $registryServer --registry-username $registryUserName \
+  --registry-password $registryPassword \
+  --ingress internal --target-port 80 --transport http \
+  --secrets azurewebjobsstorage=$azureWebJobsStorage,bloconnstring=$blobConnectionString,queueconnstring=$queueConnectionKey \
+  --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage,AzureBlob_connectionString=secretref:bloconnstring,azurequeues-connectionKey=secretref:queueconnstring"
+
+#az containerapp delete --name logicstorageapp --resource-group $resourceGroup --yes
+
+========================================================================================================================
+
+log-analytics
+====================
+az monitor log-analytics query \
+  --workspace $logWorkspaceId \
+  --analytics-query "ContainerAppConsoleLogs_CL | where ContainerAppName_s == 'httcontainerapp' | project ContainerAppName_s, Log_s, TimeGenerated" \
+  --out table
+
+az monitor log-analytics query \
+  --workspace $logWorkspaceId \
+  --analytics-query "ContainerAppConsoleLogs_CL | where ContainerAppName_s == 'httcontainerapp-secured' | project ContainerAppName_s, Log_s, TimeGenerated" \
+  --out table
+
+az monitor log-analytics query \
+  --workspace $logWorkspaceId \
+  --analytics-query "ContainerAppConsoleLogs_CL | where ContainerAppName_s == 'blobcontainerapp' | project ContainerAppName_s, Log_s, TimeGenerated" \
+  --out table
+
+az monitor log-analytics query \
+  --workspace $logWorkspaceId \
+  --analytics-query "ContainerAppConsoleLogs_CL | where ContainerAppName_s == 'logiccontainerapp' | project ContainerAppName_s, Log_s, TimeGenerated" \
+  --out table
+
+az monitor log-analytics query \
+  --workspace $logWorkspaceId \
+  --analytics-query "ContainerAppConsoleLogs_CL | where ContainerAppName_s == 'apimcontainerapp' | project ContainerAppName_s, Log_s, TimeGenerated" \
+  --out table
+
+
+

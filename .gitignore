@@ -1,8 +1,8 @@
 !.gitignore
 .vscode
 .vs
-Misc
-!Setup
+Misc/*.jmx
+Misc/commands.txt
 **/bin
 **/obj
 **/local.settings.json
