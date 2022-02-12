@@ -168,7 +168,7 @@ apimSubnetId=$(az network vnet subnet show --name $apimSubnetName --vnet-name $a
 
 #### Create a Secured Environment
 
-Please follow this [excellent article](https://techcommunity.microsoft.com/t5/apps-on-azure-blog/azure-container-apps-virtual-network-integration/ba-p/3096932) to get a detailed view on this
+***Please follow this [excellent article](https://techcommunity.microsoft.com/t5/apps-on-azure-blog/azure-container-apps-virtual-network-integration/ba-p/3096932) to get a detailed view on this***
 
 ```bash
 az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
@@ -190,6 +190,8 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
 
 
 ![containerapp-private-dns](./Assets/containerapp-private-dns-plink.png)
+
+
 
 ##### Create Private DNS Zone
 
@@ -424,6 +426,8 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
             "Zip": "testzip-2011.zip"
         }
         ```
+        
+        
     
 
   #### Logic App as Azure Container App
@@ -457,6 +461,8 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
         --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
     ```
 
+    
+
   - Note down the Logic App ingress url
 
     ![httplogic-container-overview](./Assets/httplogic-container-overview.png)
@@ -481,9 +487,6 @@ This function will be triggerred by a http Post call
 - Return the response back to the caller
 
 - Before we Deploy the function app, let us look at its code
-
-
-​      
 
 ```c#
 using System;
@@ -544,19 +547,18 @@ httpImageName="$registryServer/httplogiccontainerapp:v1.0.5" logicAppCallbackUrl
 
   
 
+
+
 ## Deploy APIM in a Virtual Network
 
 ![apim-overview](./Assets/apim-overview.png)
 
 - Integrate both the Container Apps (*Function App* and  *Logic App*) with **Azure APIM**
-
 - **Create** an APIM instance on Azure
-
 - **Deploy** APIM in an [Internal Vnet](https://docs.microsoft.com/en-us/azure/api-management/api-management-using-with-internal-vnet?tabs=stv2) or [External Vnet](https://docs.microsoft.com/en-us/azure/api-management/api-management-using-with-vnet?tabs=stv2) and follow instructions accordingly
-
 - **Add** two Container Apps (*as deployed above*) as backend for the APIM
 
-  
+
 
 ## Another approach
 
@@ -722,8 +724,10 @@ curl -k -X POST --data '{"zip":"test.zip"}' https://$fqdn/container/api/logicapp
 
 ## References
 
-- [Azure Container Apps](https://docs.microsoft.com/en-us/azure/container-apps/overview)					
+- [Azure Container Apps](https://docs.microsoft.com/en-us/azure/container-apps/overview)	
+- Container App - [Virtual Network Integration](https://techcommunity.microsoft.com/t5/apps-on-azure-blog/azure-container-apps-virtual-network-integration/ba-p/3096932)				
 - [Logic App Standard](https://docs.microsoft.com/en-us/azure/logic-apps/single-tenant-overview-compare)
+- Azure APIM - [Virtual Network](https://docs.microsoft.com/en-us/azure/api-management/api-management-using-with-vnet?tabs=stv2) and [Internal Virtual Network](https://docs.microsoft.com/en-us/azure/api-management/api-management-using-with-internal-vnet?tabs=stv2)
 - Azure APIM [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview)
 - [Source Repo](https://github.com/monojit18/ContainerApps.git)	
 
