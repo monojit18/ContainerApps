@@ -139,20 +139,36 @@ az containerapp env create --name $basicEnvironment --resource-group $resourceGr
 
   ## Setup Azure Container App
 
-Create *Virtual Network* to inject Container Apps
+#### Create Virtual Network to inject Container Apps
 
 ```bash
-containerAppVnetId=$(az network vnet show -n $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+# ControlPlane Vnet
+az network vnet create --name $containerAppVnetName --resource-group $resourceGroup
+containerAppVnetId=$(az network vnet show --name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
+# ControlPlane Subnet
+az network vnet subnet create --name $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup
 controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
+# Apps Subnet
+az network vnet subnet create --name $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup
 appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+# APIM Vnet
+az network vnet create --name $apimVnetName --resource-group $resourceGroup
+apimVnetId=$(az network vnet show --name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+# APIM Subnet
+az network vnet subnet create --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup
+apimSubnetId=$(az network vnet subnet show --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
 ```
 
 
 
-Create a *Secured Environment* for Azure Container Apps with this *Virtual Network*
+#### Create a Secured Environment
+
+Please follow this [excellent article](https://techcommunity.microsoft.com/t5/apps-on-azure-blog/azure-container-apps-virtual-network-integration/ba-p/3096932) to get a detailed view on this
 
 ```bash
 az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
@@ -163,19 +179,72 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
 ```
 
 - ***--internal-only*** flag ensures that this environment can communicate with services on same virtual network or on a peered virtual network
-
 - Excluding ***--internal-only*** flag makes this environment reachable from other container apps in the same environment
 
-  
+
+
+#### Configure a Secured Environment
+
+![containerapp-private-dns](./Assets/containerapp-private-dns.png)
+
+
+
+![containerapp-private-dns](./Assets/containerapp-private-dns-plink.png)
+
+##### Create Private DNS Zone
+
+```bash
+defaultDomain=$(az containerapp env show --name $securedEnvironment --resource-group $resourceGroup --query="defaultDomain" -o tsv)
+staticIp=$(az containerapp env show --name $securedEnvironment --resource-group $resourceGroup --query="staticIp" -o tsv)
+
+az network private-dns zone create --name $defaultDomain --resource-group $resourceGroup
+
+#az network private-dns zone show --name $defaultDomain --resource-group $resourceGroup
+```
+
+
+
+##### Link Virtual Networks
+
+```bash
+az network private-dns link vnet create --name $containerAppLinkName --resource-group $resourceGroup \
+--virtual-network $containerAppVnetName --zone-name $defaultDomain
+
+#az network private-dns link vnet show --name $containerAppLinkName --resource-group $resourceGroup --zone-name $defaultDomain
+
+az network private-dns link vnet create --name $apimLinkName --resource-group $resourceGroup \
+--virtual-network $apimVnetName --zone-name $defaultDomain
+
+#az network private-dns link vnet show --name $apimLinkName --resource-group $resourceGroup --zone-name $defaultDomain
+```
+
+
+
+##### Create wild card A record
+
+```bash
+az network private-dns record-set a create --name "*" --resource-group $resourceGroup --zone-name $defaultDomain
+#az network private-dns record-set a show --name "*" --resource-group $resourceGroup --zone-name $defaultDomain
+
+az network private-dns record-set a add-record --ipv4-address $staticIp --record-set-name "*" \
+--resource-group $resourceGroup --zone-name $defaultDomain
+```
+
+
 
 ## Deploy Azure Logic App as Container App
 
 Build a **Logic App** with basic request/response workflow - viz. **LogicContainerApp**
 
 - **Run** and test this Logic app as docker container locally
+
 - **Deploy** the Logic App container onto Azure as a *Container App*
+
 - **Host** the Logic App inside a Virtual Network (*Secured Environment*)
+
 - **Expose** the container app with ***Internal Ingress*** - blocking all public access
+
+  
 
 #### Logic App in a Container
 
@@ -183,19 +252,19 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
 - Logic App runs an Azure Function locally and hence few tools/extensions need to be installed
 
+  
+
   ##### Pre-Requisites
 
-  - Azure Function Core Tools - [v3.x](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=v3%2Cwindows%2Ccsharp%2Cportal%2Cbash)
-    - The abobve link is for macOS; please install the appropriate links in the same page for other Operating Systems
-    - At the time of writing, Core tools 3.x only supports the *Logic App Designer* within Visual Studio Code
-    - The current example has been tested with - Function Core Tools version **3.0.3904** on a *Windows box*
+  - Azure Function **Core Tools** - [v3.x](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=v3%2Cwindows%2Ccsharp%2Cportal%2Cbash)
+  - The abobve link is for macOS; please install the appropriate links in the same page for other Operating Systems
+  - At the time of writing, Core tools 3.x only supports the *Logic App Designer* within Visual Studio Code
+  - The current example has been tested with - Function Core Tools version **3.0.3904** on a *Windows box*
   - [Docker Desktop for Windows](https://hub.docker.com/editions/community/docker-ce-desktop-windows)
-  - A **Storage Account** on Azure - which is needed by any Azure function App
-    - Logic App (*aka Azure Function*) would use this storage to cache its state
+  - A **Storage Account** on Azure - which is needed by any Azure function App. Logic App (*aka Azure Function*) would use this storage to cache its state
   - VS Code Extension for [Standard Logic App](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurelogicapps#:~:text=Azure%20Logic%20Apps%20for%20Visual,Apps%20directly%20from%20VS%20Code.)
   - VS Code Extension for [Azure Function](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions) 
-  - VS Code extension for [Docker](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker)
-    - This is Optional but recommended; it makes life easy while dealing with *Dockerfile* and *Docker CLI* commands
+  - VS Code extension for [Docker](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker). This is Optional but recommended; it makes life easy while dealing with *Dockerfile* and *Docker CLI* commands
 
 - Create a Local folder to host all files related Logic App - viz. *LogicContainerApp*
 
@@ -207,19 +276,19 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
   - This generates all necessary files and sub-folders within the current folder
 
-    - A folder named *httpresflow* is also added which contains the workflow.json file
+  - A folder named *httpresflow* is also added which contains the workflow.json file
 
-    - This describes the Logic App Actions/triggers
+  - This describes the Logic App Actions/triggers
 
-    - This example uses a Http Request/Response type Logic App for simplicity
+  - This example uses a Http Request/Response type Logic App for simplicity
 
-    - The Logic App would accept a Post body as below and would return back the same as response
+  - The Logic App would accept a Post body as below and would return back the same as response
 
-      ```json
-      {
-          "Zip": "testzip-2011.zip"
-      }
-      ```
+    ```json
+    {
+        "Zip": "testzip-2011.zip"
+    }
+    ```
 
 
 - Right click on the *workflow.json* file and Open the *Logic App Designer* - *this might take few seconds to launch*
@@ -475,14 +544,34 @@ httpImageName="$registryServer/httplogiccontainerapp:v1.0.5" logicAppCallbackUrl
 
   
 
-## Deploy Self-hosted Gateway as Container App
+## Deploy APIM in a Virtual Network
 
-Integrate both the Container Apps (*Function App* and  *Logic App*) with **Azure APIM**
+![apim-overview](./Assets/apim-overview.png)
+
+- Integrate both the Container Apps (*Function App* and  *Logic App*) with **Azure APIM**
+
+- **Create** an APIM instance on Azure
+
+- **Deploy** APIM in an [Internal Vnet](https://docs.microsoft.com/en-us/azure/api-management/api-management-using-with-internal-vnet?tabs=stv2) or [External Vnet](https://docs.microsoft.com/en-us/azure/api-management/api-management-using-with-vnet?tabs=stv2) and follow instructions accordingly
+
+- **Add** two Container Apps (*as deployed above*) as backend for the APIM
+
+  
+
+## Another approach
+
+### Deploy Self-hosted Gateway as Container App
+
+- Integrate both the Container Apps (*Function App* and  *Logic App*) with **Azure APIM**
 
 - **Create** an APIM instance on Azure with a [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview)
+
 - **Deploy** Self-hosted APIM as *Container App* and in the same *Secured Environment* as above
+
 - **Add** two Container Apps (*as deployed above*) as backend for the APIM
+
 - **Expose** the APIM Container App with ***External Ingress*** thus making it the only public facing endpoint for the entire system
+
 - APIM Container App (*Self-hosted Gateway*) would be able to call the internal Container Apps since being part of the same Secured Environment
 
 - Select gateway option in APIM in the Azure Portal
