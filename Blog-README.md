@@ -11,7 +11,10 @@ Features of Azure Container Apps include:
 - **Azure CLI** extension or **ARM** templates to automate management of containerized applications
 - Manage Application **Secrets** securely
 - View **Application Logs** using *Azure Log Analytics*
-- **Manage** multiple Container Apps using [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview) feature of Azure APIM providing rich APIM Policies and Authentication mechainsms to the Container Apps
+- **Manage** multiple Container Apps using Azure APIM providing rich [APIM Policies](https://docs.microsoft.com/en-us/azure/api-management/api-management-policies) and [Authentication](https://docs.microsoft.com/en-us/azure/api-management/api-management-howto-aad) mechanisms to the Container Apps. This can be achieved in couple of ways:
+  - Leverage [Virtual Network Integration](https://techcommunity.microsoft.com/t5/apps-on-azure-blog/azure-container-apps-virtual-network-integration/ba-p/3096932) feature of Container Apps to securely manage through API Management in a virtual Network
+  - Use [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview) feature of APIM to treat this as a Container App and manage other Container apps
+
 
 This article would demonstrate:
 
@@ -60,6 +63,8 @@ appsSubnetId=
 # Both Control plane Subnet and Application Services Subnet should be in same VNET viz. $containerAppVnetName
 ```
 
+
+
 #### Configure Azure CLI
 
 ```bash
@@ -72,6 +77,8 @@ az provider register --namespace Microsoft.Web
 az provider show --namespace Microsoft.Web
 ```
 
+
+
 #### Create Resourcer Groups
 
 ```bash
@@ -81,6 +88,8 @@ az group create --name $resourceGroup --location $location
 # Hosting Log Analytics Workspace for Container Apps
 az group create --name $monitoringResourceGroup --location $location
 ```
+
+
 
 #### Create Log Analytics Workspace
 
@@ -94,6 +103,8 @@ logWorkspaceId=$(az monitor log-analytics workspace show --query customerId -g $
 logWorkspaceSecret=$(az monitor log-analytics workspace get-shared-keys --query primarySharedKey -g $monitoringResourceGroup -n $logWorkspace -o tsv)
 ```
 
+
+
 #### Create Container App Environment
 
 ```bash
@@ -103,6 +114,59 @@ az containerapp env create --name $basicEnvironment --resource-group $resourceGr
 ```
 
 
+
+## Connecting the Dots...
+
+
+
+![apim-container-app](./Assets/apim-manage-container-app.png)
+
+
+
+- **Setup** a Secured Container App environment integrating it with a Virtual Network
+
+- **Restrict** communication to the Secured environment is from within the Virtual Network or a peer Virtual Network
+
+- **Deploy** a Logic App as a Container App into the Secured environment
+
+- **Deploy** a Function App as a Container App into the Secured environment
+
+- **Deploy** an APIM  instance in a peered Virtual Network (*either External or Internal*)
+
+- **Configure** APIM to connect to the Container Apps securely
+
+  
+
+  ## Setup Azure Container App
+
+Create *Virtual Network* to inject Container Apps
+
+```bash
+containerAppVnetId=$(az network vnet show -n $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+```
+
+
+
+Create a *Secured Environment* for Azure Container Apps with this *Virtual Network*
+
+```bash
+az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
+  --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location \
+  --controlplane-subnet-resource-id $controlPlaneSubnetId \
+  --app-subnet-resource-id $appsSubnetId --internal-only
+
+```
+
+- ***--internal-only*** flag ensures that this environment can communicate with services on same virtual network or on a peered virtual network
+
+- Excluding ***--internal-only*** flag makes this environment reachable from other container apps in the same environment
+
+  
 
 ## Deploy Azure Logic App as Container App
 
@@ -291,33 +355,6 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
             "Zip": "testzip-2011.zip"
         }
         ```
-    
-
-
-  #### Setup Azure Container App
-
-  - Create *Virtual Network* to inject Container Apps
-
-    ```bash
-    containerAppVnetId=$(az network vnet show -n $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
-    
-    controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
-    
-    appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
-    
-    ```
-
-    
-
-  - Create a *Secured Environment* for Azure Container Apps with this *Virtual Network*
-
-    ```bash
-    az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
-      --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location \
-      --controlplane-subnet-resource-id $controlPlaneSubnetId \
-      --app-subnet-resource-id $appsSubnetId
-    ```
-
     
 
   #### Logic App as Azure Container App
