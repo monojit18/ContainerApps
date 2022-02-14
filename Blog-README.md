@@ -137,7 +137,7 @@ az containerapp env create --name $basicEnvironment --resource-group $resourceGr
 
   
 
-  ## Setup Azure Container App
+## Setup Azure Container App
 
 #### Create Virtual Network to inject Container Apps
 
@@ -185,15 +185,9 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
 
 #### Configure a Secured Environment
 
-![containerapp-private-dns](./Assets/containerapp-private-dns.png)
-
-
-
-![containerapp-private-dns](./Assets/containerapp-private-dns-plink.png)
-
-
-
 ##### Create Private DNS Zone
+
+![containerapp-private-dns](./Assets/containerapp-private-dns.png)
 
 ```bash
 defaultDomain=$(az containerapp env show --name $securedEnvironment --resource-group $resourceGroup --query="defaultDomain" -o tsv)
@@ -207,6 +201,8 @@ az network private-dns zone create --name $defaultDomain --resource-group $resou
 
 
 ##### Link Virtual Networks
+
+![containerapp-private-dns](./Assets/containerapp-private-dns-plink.png)
 
 ```bash
 az network private-dns link vnet create --name $containerAppLinkName --resource-group $resourceGroup \
@@ -222,7 +218,7 @@ az network private-dns link vnet create --name $apimLinkName --resource-group $r
 
 
 
-##### Create wild card A record
+##### Create wild card *A* *record*
 
 ```bash
 az network private-dns record-set a create --name "*" --resource-group $resourceGroup --zone-name $defaultDomain
@@ -582,9 +578,13 @@ httpImageName="$registryServer/httplogiccontainerapp:v1.0.5" logicAppCallbackUrl
 
   
 
+  
+
 - Get the *Endpoint Url* and *Auth Token* from the portal
 
   ![apim-gateway-2](./Assets/apim-gateway-2.png)
+
+  
 
   
 
@@ -670,6 +670,8 @@ httpImageName="$registryServer/httplogiccontainerapp:v1.0.5" logicAppCallbackUrl
           ]
       }
 ```
+
+
 
 
 - Deploy APIM as Container App
