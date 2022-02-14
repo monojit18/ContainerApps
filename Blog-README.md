@@ -556,9 +556,9 @@ httpImageName="$registryServer/httplogiccontainerapp:v1.0.5" logicAppCallbackUrl
 
 
 
-## Another approach
+## Alternate Approach
 
-### Deploy Self-hosted Gateway as Container App
+### Deploy Self-hosted Gateway for APIM as Container App
 
 - Integrate both the Container Apps (*Function App* and  *Logic App*) with **Azure APIM**
 
