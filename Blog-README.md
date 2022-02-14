@@ -21,7 +21,8 @@ This article would demonstrate:
 - [How to Setup Azure Container Apps using Azure CLI](#How to Setup)
 - [How to Deploy a containerized *Logic App* as Azure Container App](#Deploy Azure Logic App as Container App)
 - [How to Deploy a containerized *Azure Function* as Azure Container App](#Deploy Azure Function as Container App)
-- [Deploy the *Self-hosted Gateway* component of an APIM instance as a Container App itself](#Deploy Self-hosted Gateway as Container App)
+- [Deploy APIM in a Virtual Network](#Deploy APIM in a Virtual Network)
+- [Deploy the *Self-hosted Gateway* component of an APIM instance as a Container App itself](#Alternate Approach)
 - [Integrate the two Container Apps with APIM Container App](#Integrate All using APIM)
 - [Test the entire flow end to end](#Test End-to-End)
 
@@ -559,6 +560,8 @@ httpImageName="$registryServer/httplogiccontainerapp:v1.0.5" logicAppCallbackUrl
 ## Alternate Approach
 
 ### Deploy Self-hosted Gateway for APIM as Container App
+
+![apim-container-app](./Assets/apim-container-app.png)
 
 - Integrate both the Container Apps (*Function App* and  *Logic App*) with **Azure APIM**
 
