@@ -18,6 +18,14 @@ controlPlaneSubnetName="containerapp-cp-subnet"
 controlPlaneSubnetId=
 appsSubnetName="containerapp-app-subnet"
 appsSubnetId=
+apimLinkName="apim-dns-plink"
+blobConnection=""
+blobConnection2=""
+queueConnection=""
+apimEndpoint=""
+apimAuth=""
+logicAppCallback=""
+logicAppPost=""
 
 ContaierApp Setup & Deploy
 =============================
@@ -38,9 +46,20 @@ az monitor log-analytics workspace create --resource-group $monitoringResourceGr
 logWorkspaceId=$(az monitor log-analytics workspace show --query customerId -g $monitoringResourceGroup -n $logWorkspace -o tsv)
 logWorkspaceSecret=$(az monitor log-analytics workspace get-shared-keys --query primarySharedKey -g $monitoringResourceGroup -n $logWorkspace -o tsv)
 
-containerAppVnetId=$(az network vnet show -n $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+az network vnet create --name $containerAppVnetName --resource-group $resourceGroup
+containerAppVnetId=$(az network vnet show --name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+az network vnet subnet create --name $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup
 controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+az network vnet subnet create --name $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup
 appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+az network vnet create --name $apimVnetName --resource-group $resourceGroup
+apimVnetId=$(az network vnet show --name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+az network vnet subnet create --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup
+apimSubnetId=$(az network vnet subnet show --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
 az containerapp env create --name $basicEnvironment --resource-group $resourceGroup \
   --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location
@@ -50,7 +69,29 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
   --controlplane-subnet-resource-id $controlPlaneSubnetId \
   --app-subnet-resource-id $appsSubnetId --internal-only
 
-az containerapp env delete --name $securedEnvironment --resource-group $resourceGroup --yes
+defaultDomain=$(az containerapp env show --name $securedEnvironment --resource-group $resourceGroup --query="defaultDomain" -o tsv)
+staticIp=$(az containerapp env show --name $securedEnvironment --resource-group $resourceGroup --query="staticIp" -o tsv)
+
+az network private-dns zone create --name $defaultDomain --resource-group $resourceGroup
+#az network private-dns zone show --name $defaultDomain --resource-group $resourceGroup
+
+az network private-dns link vnet create --name $containerAppLinkName --resource-group $resourceGroup \
+--virtual-network $containerAppVnetName --zone-name $defaultDomain
+
+#az network private-dns link vnet show --name $containerAppLinkName --resource-group $resourceGroup --zone-name $defaultDomain
+
+az network private-dns link vnet create --name $apimLinkName --resource-group $resourceGroup \
+--virtual-network $apimVnetName --zone-name $defaultDomain
+
+#az network private-dns link vnet show --name $apimLinkName --resource-group $resourceGroup --zone-name $defaultDomain
+
+az network private-dns record-set a create --name "*" --resource-group $resourceGroup --zone-name $defaultDomain
+#az network private-dns record-set a show --name "*" --resource-group $resourceGroup --zone-name $defaultDomain
+
+az network private-dns record-set a add-record --ipv4-address $staticIp --record-set-name "*" \
+--resource-group $resourceGroup --zone-name $defaultDomain
+
+#az containerapp env delete --name $securedEnvironment --resource-group $resourceGroup --yes
 
 blobcontainerapp
 ============================================================
@@ -62,7 +103,7 @@ az acr build -t blobcontainerapp:v1.0.0 -r $acrName .
 az acr build -t blobcontainerapp:v1.0.1 -r $acrName .
 
 blobImageName="$registryServer/blobcontainerapp:v1.0.0"
-azureWebJobsStorage=""
+azureWebJobsStorage=$blobConnection
 
 az containerapp create --name blobcontainerapp --resource-group $resourceGroup \
   --image $blobImageName --environment $basicEnvironment \
@@ -96,7 +137,7 @@ az acr build -t httpcontainerapp:v1.0.4 -r $acrName .
 az acr build -t httplogiccontainerapp:v1.0.5 -r $acrName .
 
 httpImageName="$registryServer/httpcontainerapp:v1.0.0"
-azureWebJobsStorage=""
+azureWebJobsStorage=$blobConnection
 az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 --image $httpImageName --environment $basicEnvironment \
 --registry-login-server $registryServer --registry-username $registryUserName \
@@ -176,7 +217,7 @@ logiccontainerapp
 az acr build -t logiccontainerapp:v1.0.0 -r $acrName .
 
 logicappImageName="$registryServer/logiccontainerapp:v1.0.0"
-azureWebJobsStorage=""
+azureWebJobsStorage=$blobConnection
 
 az containerapp create --name logicontainerapp --resource-group $resourceGroup \
   --image $logicappImageName --environment $securedEnvironment \
@@ -191,8 +232,8 @@ az containerapp create --name logicontainerapp --resource-group $resourceGroup \
 httplogiccontainerapp
 ============================================================
 httpImageName="$registryServer/httplogiccontainerapp:v1.0.5"
-logicAppCallbackUrl=""
-logicAppPostUrl=""
+logicAppCallbackUrl=$logicAppCallback
+logicAppPostUrl=$logicAppPost
 
 az containerapp create --name httplogiccontainerapp --resource-group $resourceGroup \
   --image $httpImageName --environment $securedEnvironment \
@@ -209,8 +250,8 @@ az containerapp create --name httplogiccontainerapp --resource-group $resourceGr
 apimcontainerapp
 ============================================================
 apimappImageName="mcr.microsoft.com/azure-api-management/gateway:latest"
-serviceEndpoint=""
-serviceAuth=""
+serviceEndpoint=$apimEndpoint
+serviceAuth=$apimAuth
 
 az deployment group create -f ./api-deploy.json -g $resourceGroup \
 --parameters serviceEndpoint=$serviceEndpoint serviceAuth=$serviceAuth
@@ -226,9 +267,9 @@ logicstorageapp
 az acr build -t logicstorageapp:v1.0.0 -r $acrName .
 
 logicappImageName="$registryServer/logicstorageapp:v1.0.0"
-azureWebJobsStorage=""
-blobConnectionString=""
-queueConnectionKey=""
+azureWebJobsStorage=$blobConnection
+blobConnectionString=$blobConnection2
+queueConnectionKey=$queueConnection
 
 az containerapp create --name logicstorageapp --resource-group $resourceGroup \
   --image $logicappImageName --environment $securedEnvironment \
@@ -268,6 +309,3 @@ az monitor log-analytics query \
   --workspace $logWorkspaceId \
   --analytics-query "ContainerAppConsoleLogs_CL | where ContainerAppName_s == 'apimcontainerapp' | project ContainerAppName_s, Log_s, TimeGenerated" \
   --out table
-
-
-
