@@ -46,12 +46,6 @@ registryServer="<container_registry_server>"
 registryUserName="<container_registry_username>"
 registryPassword="<container_registry_password>"
 
-# Function App would call this url to get the POST url end point of the http trigerred Logic App
-logicAppCallback=""
-
-# Logic App POST url returned from the previous call
-logicAppPost=""
-
 # VNET for Securing Container Apps
 containerAppVnetName="containerapp-workshop-vnet"
 containerAppVnetId=
@@ -553,9 +547,13 @@ namespace HttpContainerApps
 
 ```bash
  
-httpImageName="$registryServer/httplogiccontainerapp:v1.0.5" logicAppCallbackUrl="https://<logicontainerapp_internal_ingress_url>/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>"
+httpImageName="$registryServer/httplogiccontainerapp:v1.0.5" 
+
+# Function App would call this url to get the POST url end point of the http trigerred Logic App
+logicAppCallbackUrl="https://<logicontainerapp_internal_ingress_url>/runtime/webhooks/workflow/api/management/workflows/httpresflow/triggers/manual/listCallbackUrl?api-version=2020-05-01-preview&code=<master_key_value_from_storage_account>"
   
-  logicAppPostUrl="https://<logicontainerapp_internal_ingress_url>/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig={0}"
+# Logic App POST url returned from the previous call
+logicAppPostUrl="https://<logicontainerapp_internal_ingress_url>/api/httpresflow/triggers/manual/invoke?api-version=2020-05-01-preview&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig={0}"
   
   az containerapp create --name httplogiccontainerapp --resource-group $resourceGroup \
     --image $httpImageName --environment $securedEnvironment \
