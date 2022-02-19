@@ -46,22 +46,42 @@ registryServer="<container_registry_server>"
 registryUserName="<container_registry_username>"
 registryPassword="<container_registry_password>"
 
-# Optional - NOT a requirement for Contyainer Apps but mostly for microservice applications
-storageName="<storage_account_name>"
+# Function App would call this url to get the POST url end point of the http trigerred Logic App
+logicAppCallback=""
 
-# Optional - Primary for Securing Container Apps
+# Logic App POST url returned from the previous call
+logicAppPost=""
+
+# VNET for Securing Container Apps
 containerAppVnetName="containerapp-workshop-vnet"
 containerAppVnetId=
+containerVnetPrefix=""
 
-# Optional - Subnet for Control plane of the Container Apps Infrastructure
+# Subnet for Control plane of the Container Apps Infrastructure
 controlPlaneSubnetName="containerapp-cp-subnet"
 controlPlaneSubnetId=
+controlPlaneSubnetPrefix=""
 
-# Optional - Subnet for hosting Container Apps
+# Private DNS zone for Container Apps
+containerAppLinkName="containerapp-dns-plink"
+
+# Subnet for hosting Container Apps
 appsSubnetName="containerapp-app-subnet"
 appsSubnetId=
+appsSubnetPrefix=""
 
 # Both Control plane Subnet and Application Services Subnet should be in same VNET viz. $containerAppVnetName
+
+apimVnetName="apim-workshop-vnet"
+apimVnetId=
+apimVnetPrefix=""
+apimSubnetName="apim-workshop-subnet"
+apimSubnetId=
+apimSubnetPrefix=""
+
+# Private DNS zone for APIM
+apimLinkName="apim-dns-plink"
+
 ```
 
 
@@ -71,7 +91,7 @@ appsSubnetId=
 ```bash
 # Add CLI extension for Container Apps
 az extension add \
-  --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl
+  --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.2-py2.py3-none-any.whl
   
 # Register the Microsoft.Web namespace
 az provider register --namespace Microsoft.Web
@@ -143,25 +163,31 @@ az containerapp env create --name $basicEnvironment --resource-group $resourceGr
 #### Create Virtual Network to inject Container Apps
 
 ```bash
-# ControlPlane Vnet
-az network vnet create --name $containerAppVnetName --resource-group $resourceGroup
-containerAppVnetId=$(az network vnet show --name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+# Container App Vnet
+az network vnet create --name $containerVnetName --resource-group $resourceGroup --address-prefixes $containerVnetPrefix
+containerAppVnetId=$(az network vnet show --name $containerVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
 # ControlPlane Subnet
-az network vnet subnet create --name $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup
-controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+az network vnet subnet create --name $controlPlaneSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup \
+--address-prefixes $controlPlaneSubnetPrefix
+controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerVnetName \
+--resource-group $resourceGroup --query="id" -o tsv)
 
 # Apps Subnet
-az network vnet subnet create --name $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup
-appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+az network vnet subnet create --name $appsSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup \
+--address-prefixes $appsSubnetPrefix
+appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup \
+--query="id" -o tsv)
 
 # APIM Vnet
-az network vnet create --name $apimVnetName --resource-group $resourceGroup
+az network vnet create --name $apimVnetName --resource-group $resourceGroup --address-prefixes $apimVnetPrefix
 apimVnetId=$(az network vnet show --name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
 # APIM Subnet
-az network vnet subnet create --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup
-apimSubnetId=$(az network vnet subnet show --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
+az network vnet subnet create --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup \
+--address-prefixes $apimSubnetPrefix
+apimSubnetId=$(az network vnet subnet show --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup \
+--query="id" -o tsv)
 
 ```
 
@@ -378,6 +404,8 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
       
         ![logicapp-host-json](./Assets/logicapp-host-json.png)  
       
+        
+      
       - Open *POSTMAN* or any Rest client of choice like **curl**
       
         ```bash
@@ -432,7 +460,7 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
   - Let us now deploy the logic app container onto Azure as Container App
 
   - Push Logic App container image to *Azure Container Registry*
-
+  
     ```bash
     # If Container image is already created and tested, use Docker CLI
     docker push <repo_name>/<image_name>:<tag>
@@ -444,7 +472,7 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
     ```
 
   - Create Azure Container App with this image
-
+  
     ```bash
     logicappImageName="$registryServer/logiccontainerapp:v1.0.0"
           azureWebJobsStorage="<storage_account_connection_string"
@@ -453,7 +481,7 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
         --image $logicappImageName --environment $securedEnvironment \
         --registry-login-server $registryServer --registry-username $registryUserName \
         --registry-password $registryPassword \
-        --ingress external --target-port 80 --transport http \
+        --ingress internal --target-port 80 --transport http \
         --secrets azurewebjobsstorage=$azureWebJobsStorage \
         --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
     ```
@@ -463,7 +491,9 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
   - Note down the Logic App ingress url
 
     ![httplogic-container-overview](./Assets/httplogic-container-overview.png)
-
+  
+    
+    
     
 
 ## Deploy Azure Function as Container App
@@ -522,6 +552,8 @@ namespace HttpContainerApps
       }
   }      
 ```
+
+
 
 - Deploy Azure Function app as Container App
 
