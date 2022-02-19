@@ -168,26 +168,20 @@ az network vnet create --name $containerVnetName --resource-group $resourceGroup
 containerAppVnetId=$(az network vnet show --name $containerVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
 # ControlPlane Subnet
-az network vnet subnet create --name $controlPlaneSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup \
---address-prefixes $controlPlaneSubnetPrefix
-controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerVnetName \
---resource-group $resourceGroup --query="id" -o tsv)
+az network vnet subnet create --name $controlPlaneSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup --address-prefixes $controlPlaneSubnetPrefix
+controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
 # Apps Subnet
-az network vnet subnet create --name $appsSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup \
---address-prefixes $appsSubnetPrefix
-appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup \
---query="id" -o tsv)
+az network vnet subnet create --name $appsSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup --address-prefixes $appsSubnetPrefix
+appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
 # APIM Vnet
 az network vnet create --name $apimVnetName --resource-group $resourceGroup --address-prefixes $apimVnetPrefix
 apimVnetId=$(az network vnet show --name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
 # APIM Subnet
-az network vnet subnet create --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup \
---address-prefixes $apimSubnetPrefix
-apimSubnetId=$(az network vnet subnet show --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup \
---query="id" -o tsv)
+az network vnet subnet create --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup --address-prefixes $apimSubnetPrefix
+apimSubnetId=$(az network vnet subnet show --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
 
 ```
 
