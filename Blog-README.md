@@ -76,6 +76,10 @@ apimSubnetPrefix=""
 # Private DNS zone for APIM
 apimLinkName="apim-dns-plink"
 
+# VNET peering between Container App Vnet and APIM VNet (In case two subnets are not within same Vnet)
+containerAppPeeringName="containerpp-apim-peering"
+apimPeeringName="apim-containerpp-peering"
+
 ```
 
 
@@ -176,6 +180,13 @@ apimVnetId=$(az network vnet show --name $apimVnetName --resource-group $resourc
 # APIM Subnet
 az network vnet subnet create --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup --address-prefixes $apimSubnetPrefix
 apimSubnetId=$(az network vnet subnet show --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
+
+# VNET peering between Container App Vnet and APIM VNet (In case two subnets are not within same Vnet)
+az network vnet peering create --name $containerAppPeeringName --remote-vnet $apimVnetId \
+--resource-group $resourceGroup --vnet-name $containerVnetName --allow-vnet-access
+
+az network vnet peering create --name $apimPeeringName --remote-vnet $containerAppVnetId \
+--resource-group $resourceGroup --vnet-name $apimVnetName --allow-vnet-access
 
 ```
 
