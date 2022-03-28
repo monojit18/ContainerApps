@@ -2,11 +2,10 @@ tenantId=""
 subscriptionId=""
 resourceGroup="serverless-workshop-rg"
 monitoringResourceGroup="monitoring-workshop-rg"
-location="eastus"
+location="centralus"
 logWorkspace="container-workshop-lw"
 basicEnvironment="basic-env"
 securedEnvironment="secure-env"
-apimSecuredEnvironment="apim-secure-env"
 acrName=""
 registryServer=""
 registryUserName=""
@@ -96,7 +95,7 @@ az network private-dns record-set a add-record --ipv4-address $staticIp --record
 blobcontainerapp
 ============================================================
 
-k create secret generic blobcontainerapp-secret -n serverless --from-literal=AzureWebJobsStorage='DefaultEndpointsProtocol=https;AccountName=srvlswkstorage;AccountKey=QTrV7WSaZFK1UraurcKA1yi5fRmuw89ipTD4nq9+cpEnrsM4e7/ijNl3hCFA6/JsyOR6c1f5ARTq9JJKcDVXaA==;EndpointSuffix=core.windows.net' --from-literal=AzureSQLConnectionString='Server=tcp:bus-server490731.database.windows.net,1433;Initial Catalog=bus-db;Persist Security Info=False;User ID=cloudadmin;Password=P@ssword@2022;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+k create secret generic blobcontainerapp-secret -n serverless --from-literal=AzureWebJobsStorage='' --from-literal=AzureSQLConnectionString=''
 k delete secrets/blobcontainerapp-secret -n serverless
 
 az acr build -t blobcontainerapp:v1.0.0 -r $acrName .

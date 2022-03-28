@@ -18,19 +18,25 @@ namespace HttpContainerApps
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
             ILogger log)
         {
+            
             log.LogInformation("C# HTTP trigger function processed a request.");
 
             var name = req.Query["name"];
-            var cl = new HttpClient();
 
-            var uri = $"http://httpcontainerapp-secured.internal.greensea-4ecd9ebc.eastus.azurecontainerapps.io/api/container?name={name}";
-            var res = await cl.GetAsync(uri);
-            var response = await res.Content.ReadAsStringAsync();
-            log.LogInformation($"Status:{res.StatusCode}");
-            log.LogInformation($"Response:{response}-v1.0.4");
-            response = $"Hello, {response}-v1.0.4";
+            // var cl = new HttpClient();
+            // var anotherFunctionAppUri = Environment.GetEnvironmentVariable("ANOTHER_FUNCTIONAPP_URL");
+            // var uri = $"{anotherFunctionAppUri}/api/container?name={name}";
+            // var res = await cl.GetAsync(uri);
+            // var response = await res.Content.ReadAsStringAsync();
+            // log.LogInformation($"Status:{res.StatusCode}");
+            // log.LogInformation($"Response:{response}-v1.0.4");
+            // response = $"Hello, {response}-v1.0.4";
+            
             // var response = $"Secured, {name}-v1.0.3";
+            // var response = $"Basic, {name}-v1.0.2";
+            var response = $"Basic, {name}-v1.0.1";
             return new OkObjectResult(response);
+
         }
     }
 }
