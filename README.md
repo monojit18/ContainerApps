@@ -653,27 +653,31 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
 
   - Traffic Splitting is handled by *traffic* section of the template
 
+    ![containerapp-traffic-split1](./Assets/containerapp-traffic-split1.png)
+    
     ```json
     "traffic": [
+          // {
+          // 		"latestRevision": true,
+          // 		"weight": 100
+          // }
           {
-            "latestRevision": true,
-            "weight": 100
-          }
-          // {
-          //     "revisionName": "httpcontainerapp--rv1",
-          //     "weight": 90
-          // },
-          // {
-          //     "revisionName": "httpcontainerapp--rv2",
-          //     "weight": 10  
-          // }                            
+               "revisionName": "httpcontainerapp--rv1",
+               "weight": 50
+          },
+          {
+               "revisionName": "httpcontainerapp--rv2",
+               "weight": 50  
+          }                            
     ]
     ```
+    
+    ![containerapp-traffic-split2](./Assets/containerapp-traffic-split2.png)
 
   
-
+  
   ## Connecting the Dots...
-
+  
   ![apim-container-app](./Assets/apim-container-app.png)
   
   
@@ -691,7 +695,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     - **Deploy** the Function App container onto Azure as a *Container App*
     - **Host** the Function App inside a Virtual Network (*Secured Environment*)
     - **Expose** the container app with ***Internal Ingress*** - blocking all public access
-
+  
   - Integrate both the Container Apps (*Function App* and  *Logic App*) with **Azure APIM**
     - **Create** an APIM instance on Azure with a [Self-hosted Gateway](https://docs.microsoft.com/en-us/azure/api-management/self-hosted-gateway-overview)
     - **Deploy** Self-hosted APIM as *Container App* and in the same *Secured Environment* as above
