@@ -61,7 +61,15 @@ Features of Azure Container Apps include:
 - Easily implement **Blue/Green** deployment and perform **A/B Testing** by splitting traffic across multiple versions of an application
 - **Azure CLI** extension or **ARM** templates to automate management of containerized applications
 - Manage Application **Secrets** securely
-- View **Application Logs** using *Azure Log Analytics*.
+- View **Application Logs** using *Azure Log Analytics*
+
+
+
+## Scenarios
+
+![azure-container-apps-example-scenarios](./Assets/azure-container-apps-example-scenarios.png)
+
+
 
 ## Plan
 
