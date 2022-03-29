@@ -63,7 +63,7 @@ Features of Azure Container Apps include:
 - Manage Application **Secrets** securely
 - View **Application Logs** using *Azure Log Analytics*
 
-
+![azure-container-services-microservices](./Assets/azure-container-services-microservices.png)
 
 ## Scenarios
 
