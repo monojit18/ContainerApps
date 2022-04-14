@@ -11,7 +11,7 @@
             "type": "String"
         },
         "environmentName": {
-            "defaultValue": "basic-env",
+            "defaultValue": "secure-env",
             "type": "String"
         },
         "imageName": {
@@ -73,18 +73,18 @@
                         "targetPort": 80,
                         "allowInsecure": false,
                         "traffic": [
+                            // {
+                            //     "latestRevision": true,
+                            //     "weight": 100
+                            // }
                             {
-                                "latestRevision": true,
-                                "weight": 100
-                            }
-                            // {
-                            //     "revisionName": "httpcontainerapp--rv1",
-                            //     "weight": 90
-                            // },
-                            // {
-                            //     "revisionName": "httpcontainerapp--rv2",
-                            //     "weight": 10  
-                            // }                            
+                                "revisionName": "httpcontainerapp--rv1",
+                                "weight": 90
+                            },
+                            {
+                                "revisionName": "httpcontainerapp--rv2",
+                                "weight": 10  
+                            }                            
                         ]
                     }
                 },
@@ -92,7 +92,7 @@
                     "revisionSuffix": "[parameters('revisionSuffix')]",
                     "containers": [
                         {
-                            "name": "blob-container",
+                            "name": "httpcontainerapp",
                             "image": "[parameters('imageName')]",                            
                             "env": [
                                 {

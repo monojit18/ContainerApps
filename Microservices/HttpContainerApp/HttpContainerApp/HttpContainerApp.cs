@@ -23,7 +23,7 @@ namespace HttpContainerApps
             var name = req.Query["name"];
             var cl = new HttpClient();
 
-            var uri = $"http://httpcontainerapp-secured.internal.greensea-4ecd9ebc.eastus.azurecontainerapps.io/api/container?name={name}";
+            var uri = $"{Environment.GetEnvironmentVariable("HTTP_BACKEND_URL")}?name={name}";
             var res = await cl.GetAsync(uri);
             var response = await res.Content.ReadAsStringAsync();
             log.LogInformation($"Status:{res.StatusCode}");

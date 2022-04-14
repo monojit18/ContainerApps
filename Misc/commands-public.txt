@@ -33,7 +33,7 @@ ContaierApp Setup & Deploy
 az login --tenant $tenantId
 
 az extension add \
-  --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl
+  --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.4-py2.py3-none-any.whl
 
 #az provider register --namespace Microsoft.Web
 az provider show --namespace Microsoft.Web
@@ -44,25 +44,46 @@ az provider show --namespace Microsoft.Web
 az monitor log-analytics workspace create --resource-group $monitoringResourceGroup --workspace-name $logWorkspace
 
 logWorkspaceId=$(az monitor log-analytics workspace show --query customerId -g $monitoringResourceGroup -n $logWorkspace -o tsv)
-logWorkspaceSecret=$(az monitor log-analytics workspace get-shared-keys --query primarySharedKey -g $monitoringResourceGroup -n $logWorkspace -o tsv)
+echo $logWorkspaceId
+logWorkspaceSecret=$(az monitor log-analytics workspace get-shared-keys --query primarySharedKey \
+-g $monitoringResourceGroup -n $logWorkspace -o tsv)
+echo $logWorkspaceSecret
 
-az network vnet create --name $containerAppVnetName --resource-group $resourceGroup
-containerAppVnetId=$(az network vnet show --name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+az network vnet create --name $containerVnetName --resource-group $resourceGroup --address-prefixes $containerVnetPrefix
+containerAppVnetId=$(az network vnet show --name $containerVnetName --resource-group $resourceGroup --query="id" -o tsv)
+echo $containerAppVnetId
 
-az network vnet subnet create --name $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup
-controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+az network vnet subnet create --name $controlPlaneSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup \
+--address-prefixes $controlPlaneSubnetPrefix
+controlPlaneSubnetId=$(az network vnet subnet show -n $controlPlaneSubnetName --vnet-name $containerVnetName \
+--resource-group $resourceGroup --query="id" -o tsv)
+echo $controlPlaneSubnetId
 
-az network vnet subnet create --name $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup
-appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerAppVnetName --resource-group $resourceGroup --query="id" -o tsv)
+az network vnet subnet create --name $appsSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup \
+--address-prefixes $appsSubnetPrefix
+appsSubnetId=$(az network vnet subnet show -n $appsSubnetName --vnet-name $containerVnetName --resource-group $resourceGroup \
+--query="id" -o tsv)
+echo $appsSubnetId
 
-az network vnet create --name $apimVnetName --resource-group $resourceGroup
-apimVnetId=$(az network vnet show --name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
+az network vnet create --name $apimVnetName --resource-group $apimResourceGroup --address-prefixes $apimVnetPrefix
+apimVnetId=$(az network vnet show --name $apimVnetName --resource-group $apimResourceGroup --query="id" -o tsv)
+echo $apimVnetId
 
-az network vnet subnet create --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup
-apimSubnetId=$(az network vnet subnet show --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup --query="id" -o tsv)
+az network vnet subnet create --name $apimSubnetName --vnet-name $apimVnetName --resource-group $resourceGroup \
+--address-prefixes $apimSubnetPrefix
+apimSubnetId=$(az network vnet subnet show --name $apimSubnetName --vnet-name $apimVnetName --resource-group $apimResourceGroup \
+--query="id" -o tsv)
+echo $apimSubnetId
 
 az containerapp env create --name $basicEnvironment --resource-group $resourceGroup \
   --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location
+
+#az containerapp env delete --name $basicEnvironment --resource-group $resourceGroup --yes
+
+az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
+  --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location \
+  --controlplane-subnet-resource-id $controlPlaneSubnetId \
+  --app-subnet-resource-id $appsSubnetId
 
 az containerapp env create --name $securedEnvironment --resource-group $resourceGroup \
   --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location \
@@ -70,20 +91,31 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
   --app-subnet-resource-id $appsSubnetId --internal-only
 
 defaultDomain=$(az containerapp env show --name $securedEnvironment --resource-group $resourceGroup --query="defaultDomain" -o tsv)
+echo $defaultDomain
+
 staticIp=$(az containerapp env show --name $securedEnvironment --resource-group $resourceGroup --query="staticIp" -o tsv)
+echo $staticIp
+
+az network vnet peering create --name $containerAppPeeringName --remote-vnet $apimVnetId \
+--resource-group $resourceGroup --vnet-name $containerVnetName --allow-vnet-access
+
+az network vnet peering create --name $apimPeeringName --remote-vnet $containerAppVnetId \
+--resource-group $apimResourceGroup --vnet-name $apimVnetName --allow-vnet-access
 
 az network private-dns zone create --name $defaultDomain --resource-group $resourceGroup
 #az network private-dns zone show --name $defaultDomain --resource-group $resourceGroup
 
 az network private-dns link vnet create --name $containerAppLinkName --resource-group $resourceGroup \
---virtual-network $containerAppVnetName --zone-name $defaultDomain
+--virtual-network $containerAppVnetId --zone-name $defaultDomain --registration-enabled false
 
-#az network private-dns link vnet show --name $containerAppLinkName --resource-group $resourceGroup --zone-name $defaultDomain
+az network private-dns link vnet show --name $containerAppLinkName --resource-group $resourceGroup \
+--zone-name $defaultDomain
 
 az network private-dns link vnet create --name $apimLinkName --resource-group $resourceGroup \
---virtual-network $apimVnetName --zone-name $defaultDomain
+--virtual-network $apimVnetId --zone-name $defaultDomain --registration-enabled false
 
-#az network private-dns link vnet show --name $apimLinkName --resource-group $resourceGroup --zone-name $defaultDomain
+az network private-dns link vnet show --name $apimLinkName --resource-group $resourceGroup \
+--zone-name $defaultDomain
 
 az network private-dns record-set a create --name "*" --resource-group $resourceGroup --zone-name $defaultDomain
 #az network private-dns record-set a show --name "*" --resource-group $resourceGroup --zone-name $defaultDomain
@@ -102,11 +134,11 @@ k delete secrets/blobcontainerapp-secret -n serverless
 az acr build -t blobcontainerapp:v1.0.0 -r $acrName .
 az acr build -t blobcontainerapp:v1.0.1 -r $acrName .
 
-blobImageName="$registryServer/blobcontainerapp:v1.0.0"
+blobImageName="$registryServer/blobcontainerapp:v1.0.2"
 azureWebJobsStorage=$blobConnection
 
 az containerapp create --name blobcontainerapp --resource-group $resourceGroup \
-  --image $blobImageName --environment $basicEnvironment \
+  --image $blobImageName --environment $securedEnvironment \
   --registry-login-server $registryServer --registry-username $registryUserName \
   --registry-password $registryPassword \
   --min-replicas 1 --max-replicas 10 \
@@ -120,6 +152,8 @@ acrUsername=$registryUserName acrPassword=$registryPassword azureWebjobsStorage=
 blobImageName="$registryServer/blobcontainerapp:v1.0.2"
 az containerapp update --name blobcontainerapp --resource-group $resourceGroup --image $blobImageName
 az containerapp update --name blobcontainerapp --resource-group $resourceGroup --ingress none
+az containerapp update --name blobcontainerapp --resource-group $resourceGroup --secrets azurewebjobsstorage=$azureWebJobsStorage \
+--environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
 #az containerapp delete --name blobcontainerapp --resource-group $resourceGroup --yes
 
 ========================================================================================================================
@@ -139,17 +173,18 @@ az acr build -t httplogiccontainerapp:v1.0.5 -r $acrName .
 httpImageName="$registryServer/httpcontainerapp:v1.0.0"
 azureWebJobsStorage=$blobConnection
 az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
---image $httpImageName --environment $basicEnvironment \
+--image $httpImageName --environment $securedEnvironment \
 --registry-login-server $registryServer --registry-username $registryUserName \
 --registry-password $registryPassword \
---ingress external --target-port 80 --transport http \
+--ingress internal --target-port 80 --transport http \
 --min-replicas 1 --max-replicas 5 \
 --cpu 0.25 --memory 0.5Gi \
 --secrets azurewebjobsstorage=$azureWebJobsStorage \
 --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
 
+revisionSuffix=rv1
 az deployment group create -f ./http-deploy.json -g $resourceGroup \
---parameters imageName=$httpImageName revisionSuffix=rv1 \
+--parameters imageName=$httpImageName revisionSuffix=$revisionSuffix \
 acrServer=$registryServer acrUsername=$registryUserName acrPassword=$registryPassword \
 azureWebjobsStorage=$azureWebJobsStorage
 
@@ -181,6 +216,8 @@ az containerapp revision deactivate --name "httpcontainerapp--rv1" --app httpcon
 az containerapp revision activate --name "httpcontainerapp--rv1" --app httpcontainerapp \
 --resource-group $resourceGroup
 
+#az containerapp delete --name httpcontainerapp --resource-group $resourceGroup --yes
+
 httpcontainerapp - Secured
 ============================
 
@@ -198,6 +235,7 @@ az containerapp create --name httpcontainerapp-secured --resource-group $resourc
 #az containerapp delete --name httpcontainerapp-secured --resource-group $resourceGroup --yes
 
 httpImageName="$registryServer/httpcontainerapp:v1.0.4"
+httpCallbackUrl=$httpBackendUrl
 az containerapp create --name httpcontainerapp-mult --resource-group $resourceGroup \
   --image $httpImageName --environment $securedEnvironment \
   --registry-login-server $registryServer --registry-username $registryUserName \
@@ -205,8 +243,8 @@ az containerapp create --name httpcontainerapp-mult --resource-group $resourceGr
   --ingress external --target-port 80 --transport http \
   --min-replicas 1 --max-replicas 5 \
   --cpu 0.25 --memory 0.5Gi \
-  --secrets azurewebjobsstorage=$azureWebJobsStorage \
-  --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
+  --secrets azurewebjobsstorage=$azureWebJobsStorage,httpcallbackurl=$httpCallbackUrl \
+  --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage,HTTP_BACKEND_URL=secretref:httpcallbackurl"
 
 #az containerapp delete --name httpcontainerapp-mult --resource-group $resourceGroup --yes
 
