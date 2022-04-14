@@ -18,10 +18,10 @@ namespace HttpContainerApps
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
             ILogger log)
         {
+            
             log.LogInformation("C# HTTP trigger function processed a request.");
 
             var name = req.Query["name"];
-            var cl = new HttpClient();
 
             var uri = $"{Environment.GetEnvironmentVariable("HTTP_BACKEND_URL")}?name={name}";
             var res = await cl.GetAsync(uri);
@@ -30,7 +30,10 @@ namespace HttpContainerApps
             log.LogInformation($"Response:{response}-v1.0.4");
             response = $"Hello, {response}-v1.0.4";
             // var response = $"Secured, {name}-v1.0.3";
+            // var response = $"Basic, {name}-v1.0.2";
+            var response = $"Basic, {name}-v1.0.1";
             return new OkObjectResult(response);
+
         }
     }
 }
