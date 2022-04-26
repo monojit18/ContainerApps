@@ -36,7 +36,7 @@ This article would demonstrate:
 tenantId="<tenantId>"
 subscriptionId="<subscriptionId>"
 resourceGroup="<resourceGroup>"
-monitoringResourceGroup="<monitoringResourceGroup>?"
+monitoringResourceGroup="<monitoringResourceGroup>"
 location="<location>"
 logWorkspace="<logWorkspace>"
 basicEnvironment="basic-env"
