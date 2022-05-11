@@ -26,8 +26,6 @@ This article would demonstrate:
 - [Integrate the two Container Apps with APIM Container App](#Integrate All using APIM)
 - [Test the entire flow end to end](#Test End-to-End)
 
-
-
 ## How to Setup
 
 #### Set CLI Varibales
@@ -82,8 +80,6 @@ apimPeeringName="apim-containerpp-peering"
 
 ```
 
-
-
 #### Configure Azure CLI
 
 ```bash
@@ -96,9 +92,7 @@ az provider register --namespace Microsoft.Web
 az provider show --namespace Microsoft.Web
 ```
 
-
-
-#### Create Resourcer Groups
+#### Create Resource Groups
 
 ```bash
 # Hosting Container Apps
@@ -107,8 +101,6 @@ az group create --name $resourceGroup --location $location
 # Hosting Log Analytics Workspace for Container Apps
 az group create --name $monitoringResourceGroup --location $location
 ```
-
-
 
 #### Create Log Analytics Workspace
 
@@ -122,8 +114,6 @@ logWorkspaceId=$(az monitor log-analytics workspace show --query customerId -g $
 logWorkspaceSecret=$(az monitor log-analytics workspace get-shared-keys --query primarySharedKey -g $monitoringResourceGroup -n $logWorkspace -o tsv)
 ```
 
-
-
 #### Create Container App Environment
 
 ```bash
@@ -131,8 +121,6 @@ logWorkspaceSecret=$(az monitor log-analytics workspace get-shared-keys --query 
 az containerapp env create --name $basicEnvironment --resource-group $resourceGroup \
   --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location
 ```
-
-
 
 ## Connecting the Dots...
 
@@ -190,8 +178,6 @@ az network vnet peering create --name $apimPeeringName --remote-vnet $containerA
 
 ```
 
-
-
 #### Create a Secured Environment
 
 ***Please follow this [excellent article](https://techcommunity.microsoft.com/t5/apps-on-azure-blog/azure-container-apps-virtual-network-integration/ba-p/3096932) to get a detailed view on this***
@@ -206,8 +192,6 @@ az containerapp env create --name $securedEnvironment --resource-group $resource
 
 - ***--internal-only*** flag ensures that this environment can communicate with services on same virtual network or on a peered virtual network
 - Excluding ***--internal-only*** flag makes this environment reachable from other container apps in the same environment
-
-
 
 #### Configure a Secured Environment
 
@@ -224,8 +208,6 @@ az network private-dns zone create --name $defaultDomain --resource-group $resou
 #az network private-dns zone show --name $defaultDomain --resource-group $resourceGroup
 ```
 
-
-
 ##### Link Virtual Networks
 
 ![containerapp-private-dns](./Assets/containerapp-private-dns-plink.png)
@@ -241,8 +223,6 @@ az network private-dns link vnet create --name $apimLinkName --resource-group $r
 
 #az network private-dns link vnet show --name $apimLinkName --resource-group $resourceGroup --zone-name $defaultDomain
 ```
-
-
 
 ##### Create wild card *A* *record*
 
@@ -451,13 +431,12 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
         }
         ```
         
-        
     
-
+  
   #### Logic App as Azure Container App
-
+  
   - Let us now deploy the logic app container onto Azure as Container App
-
+  
   - Push Logic App container image to *Azure Container Registry*
   
     ```bash
@@ -469,7 +448,7 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
     # Use Azure CLI command for ACR to build and push
     az acr build -t <repo_name>/<image_name>:<tag> -r $acrName .
     ```
-
+  
   - Create Azure Container App with this image
   
     ```bash
@@ -484,16 +463,13 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
         --secrets azurewebjobsstorage=$azureWebJobsStorage \
         --environment-variables "AzureWebJobsStorage=secretref:azurewebjobsstorage"
     ```
-
-    
-
-  - Note down the Logic App ingress url
-
-    ![httplogic-container-overview](./Assets/httplogic-container-overview.png)
   
     
-    
-    
+  
+  - Note down the Logic App ingress url
+  
+    ![httplogic-container-overview](./Assets/httplogic-container-overview.png)
+  
 
 ## Deploy Azure Function as Container App
 
@@ -552,8 +528,6 @@ namespace HttpContainerApps
   }      
 ```
 
-
-
 - Deploy Azure Function app as Container App
 
 ```bash
@@ -577,9 +551,6 @@ logicAppPostUrl="https://<logicontainerapp_internal_ingress_url>/api/httpresflow
 
 - This Container App is with Ingress type **Internal** so this would be at exposed publicly      
 
-  
-
-
 
 ## Deploy APIM in a Virtual Network
 
@@ -589,8 +560,6 @@ logicAppPostUrl="https://<logicontainerapp_internal_ingress_url>/api/httpresflow
 - **Create** an APIM instance on Azure
 - **Deploy** APIM in an [Internal Vnet](https://docs.microsoft.com/en-us/azure/api-management/api-management-using-with-internal-vnet?tabs=stv2) or [External Vnet](https://docs.microsoft.com/en-us/azure/api-management/api-management-using-with-vnet?tabs=stv2) and follow instructions accordingly
 - **Add** two Container Apps (*as deployed above*) as backend for the APIM
-
-
 
 ## Alternate Approach
 
@@ -616,13 +585,9 @@ logicAppPostUrl="https://<logicontainerapp_internal_ingress_url>/api/httpresflow
 
   
 
-  
-
 - Get the *Endpoint Url* and *Auth Token* from the portal
 
   ![apim-gateway-2](./Assets/apim-gateway-2.png)
-
-  
 
   
 
@@ -710,8 +675,6 @@ logicAppPostUrl="https://<logicontainerapp_internal_ingress_url>/api/httpresflow
 ```
 
 
-
-
 - Deploy APIM as Container App
 
 ```bash
@@ -722,8 +685,6 @@ serviceAuth="<service_Auth>"
 az deployment group create -f ./api-deploy.json -g $resourceGroup \
   --parameters serviceEndpoint=$serviceEndpoint serviceAuth=$serviceAuth
 ```
-
-
 
 ## Integrate All using APIM
 
@@ -736,8 +697,6 @@ az deployment group create -f ./api-deploy.json -g $resourceGroup \
   ![apim-api-main](./Assets/apim-api-2.png)
 
   ![apim-api-main](./Assets/apim-api-3.png)
-
-
 
 ## Test End-to-End 
 
@@ -759,8 +718,6 @@ curl -k -X POST --data '{"zip":"test.zip"}' https://$fqdn/container/api/logicapp
 
 {"zip":"test.zip"}
 ```
-
-
 
 ## References
 
