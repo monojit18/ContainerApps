@@ -1,4 +1,5 @@
 !.gitignore
+.funcignore
 .vscode
 .vs
 Misc/*.jmx
