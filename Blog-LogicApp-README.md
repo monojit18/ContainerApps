@@ -212,32 +212,23 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
        AZURE_FUNCTIONS_ENVIRONMENT=Development \
          WEBSITE_HOSTNAME=localhost \
        WEBSITE_SITE_NAME=logicstorageapp
+       
+    COPY ./bin/Debug/netcoreapp3.1 /home/site/wwwroot
     
-  COPY ./bin/Debug/netcoreapp3.1 /home/site/wwwroot
     ```
-  
     
-
-    - **WEBSITE_SITE_NAME** - this is the name by which entries are created in Storage Account by the Logic App while caching its state
-
-      
-
-  - **Build** docker image
+- **WEBSITE_SITE_NAME** - this is the name by which entries are created in Storage Account by the Logic App while caching its state
   
-    ```bash
-  docker build -t <repo_name>/<image_name>:<tag> .
+- **Build** docker image
+  
+  ```
+    docker build -t <repo_name>/<image_name>:<tag> .
     ```
-
-    
-
   - **Create** and **Run** the Logic App Container
-
+  
     ```bash
   docker run --name logicstorageapp -e AzureWebJobsStorage=$azureWebJobsStorage -d -p 8080:80 <repo_name>/<image_name>:<tag>
     ```
-
-  
-
 
 
   #### Setup Azure Container App
