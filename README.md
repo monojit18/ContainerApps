@@ -81,7 +81,7 @@ Features of Azure Container Apps include:
 tenantId="<tenantId>"
 subscriptionId="<subscriptionId>"
 resourceGroup="<resourceGroup>"
-monitoringResourceGroup="<monitoringResourceGroup>?"
+monitoringResourceGroup="<monitoringResourceGroup>"
 location="<location>"
 logWorkspace="<logWorkspace>"
 basicEnvironment="basic-env"
@@ -121,7 +121,7 @@ az provider register --namespace Microsoft.Web
 az provider show --namespace Microsoft.Web
 ```
 
-#### Create Resourcer Groups
+#### Create Resource Groups
 
 ```bash
 # Hosting Container Apps
@@ -191,7 +191,7 @@ az containerapp create --name httpcontainerapp --resource-group $resourceGroup \
     ![http-containerapp-overview](./Assets/http-containerapp-overview.png)
 
     - The App can be accessed from anywhere
-    - No separate Load Balancer in dded to maintain; Azure does it automatically
+    - No separate Load Balancer is needed to maintain; Azure does it automatically
 
   - *--target-port* indicates the Container Port; basically as exposed in Dockerfile and similar to ***containerPort*** in K8s Deployment manifest
 
