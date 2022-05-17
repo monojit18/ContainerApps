@@ -76,7 +76,7 @@ az provider register --namespace Microsoft.Web
 az provider show --namespace Microsoft.Web
 ```
 
-#### Create Resourcer Groups
+#### Create Resource Groups
 
 ```bash
 # Hosting Container Apps
@@ -105,8 +105,6 @@ logWorkspaceSecret=$(az monitor log-analytics workspace get-shared-keys --query 
 az containerapp env create --name $basicEnvironment --resource-group $resourceGroup \
   --logs-workspace-id $logWorkspaceId --logs-workspace-key $logWorkspaceSecret --location $location
 ```
-
-
 
 ## Deploy Azure Logic App as Container App
 
@@ -194,8 +192,6 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
 
     
 
-    
-  
   - Open the **local.settings.json** file
   
     - Replace the value of **AzureWebJobsStorage** variable with the value from *Storage Account Connection string* created earlier
@@ -216,18 +212,18 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
     COPY ./bin/Debug/netcoreapp3.1 /home/site/wwwroot
     
     ```
-    
+  
 - **WEBSITE_SITE_NAME** - this is the name by which entries are created in Storage Account by the Logic App while caching its state
   
 - **Build** docker image
   
   ```
     docker build -t <repo_name>/<image_name>:<tag> .
-    ```
+  ```
   - **Create** and **Run** the Logic App Container
   
     ```bash
-  docker run --name logicstorageapp -e AzureWebJobsStorage=$azureWebJobsStorage -d -p 8080:80 <repo_name>/<image_name>:<tag>
+    docker run --name logicstorageapp -e AzureWebJobsStorage=$azureWebJobsStorage -d -p 8080:80 <repo_name>/<image_name>:<tag>
     ```
 
 
@@ -255,7 +251,6 @@ Build a **Logic App** with basic request/response workflow - viz. **LogicContain
       --app-subnet-resource-id $appsSubnetId
     ```
 
-    
 
   #### Logic App as Azure Container App
 
